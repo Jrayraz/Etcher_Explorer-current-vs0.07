@@ -46,7 +46,11 @@ class EtcherExplorerAPP(tk.Tk):
         self.create_menus()
         self.config(menu=self.menu_bar)
         self.key = None
+        self.username = self.inspect_system()
         self.center_child_window(self)
+
+    def inspect_system(self):
+        return os.getlogin()
 
     def center_window(self):
         self.update_idletasks()
@@ -156,56 +160,62 @@ class EtcherExplorerAPP(tk.Tk):
             elif button_text == "Launch PassSave":
                 button = tk.Button(banner_frame, text=button_text, command=self.launch_pass_save)
                 button.pack(side='left', expand=True, fill='x', padx=5)
-            else:
+            elif button_text == "Launch Smartcalc":
                 button = tk.Button(banner_frame, text=button_text, command=self.launch_smartcalc)
                 button.pack(side='left', expand=True, fill='x', padx=5)
+            else:
+                button = tk.Button(banner_frame, text=button_text, command=self.under_construction)
+                button.pack(side='left', expand=True, fill='x', padx=5)
 
+#   def launch_cpu_control(self):
+ #      def send_input_to_subprocess(subprocess_stdin, input_text):
+  #         subprocess_stdin.write(input_text + "\n")
+   #        subprocess_stdin.flush()
     def launch_cpu_control(self):
-        def send_input_to_subprocess(subprocess_stdin, input_text):
-            subprocess_stdin.write(input_text + "\n")
-            subprocess_stdin.flush()
+        subprocess.Popen(['pipenv', 'run', 'python3', 'cpu_freak.py'])
+        
+#   def read_output_from_subprocess(self, process):
+#       while True:
+ #          output = process.stdout.readline()
+  #         if output == '' and process.poll() is not None:
+   #            break
+    #       if output:
+     #          self.show_terminal_prompt(output.strip())
+##
+  # process = subprocess.Popen(['sudo', 'python3', 'cpu_freak.py'],
+   #                           stdin=subprocess.PIPE,
+    #                          stdout=subprocess.PIPE,
+     #                         stderr=subprocess.PIPE,
+      #                        universal_newlines=True)
+  # threading.Thread(target=read_output_from_subprocess, args=(process,)).start()
+    def handle_input(self, prompt_dialog, input_var, process_stdin):
+        user_input = input_var.get()
+        self.send_input_to_subprocess(process_stdin, user_input)
+        prompt_dialog.destroy()
 
-        def read_output_from_subprocess(process):
-            while True:
-                output = process.stdout.readline()
-                if output == '' and process.poll() is not None:
-                    break
-                if output:
-                    self.show_terminal_prompt(output.strip())
+ #  def show_terminal_prompt(self, prompt_text):
+#       threading.Thread(target=read_output_from_subprocess, args=(process,)).start()
 
-                def handle_input(prompt_dialog, input_var, process_stdin):
-                    user_input = input_var.get()
-                    send_input_to_subprocess(process_stdin, user_input)
-                    prompt_dialog.destroy()
+#   def show_terminal_prompt(self, prompt_text):
+#       prompt_dialog = tk.Toplevel(self)
+#       prompt_dialog.title("Terminal Prompt")
+#       send_button = tk.Button(prompt_dialog, text="Send", command=lambda: self.handle_input(prompt_dialog, input_var, process.stdin))
+#       prompt_label = tk.Label(prompt_dialog, text=prompt_text)
+ #      prompt_label.pack(pady=10)
 
-        process = subprocess.Popen(['sudo', 'python3', 'cpu_freak.py'],
-                                stdin=subprocess.PIPE,
-                                stdout=subprocess.PIPE,
-                                stderr=subprocess.PIPE,
-                                universal_newlines=True)
+  #     input_var = tk.StringVar()
+   #    input_entry = tk.Entry(prompt_dialog, textvariable=input_var)
+    #   input_entry.pack(pady=10)
 
-        threading.Thread(target=read_output_from_subprocess, args=(process,)).start()
-
-    def show_terminal_prompt(self, prompt_text):
-        prompt_dialog = tk.Toplevel(self)
-        prompt_dialog.title("Terminal Prompt")
-
-        prompt_label = tk.Label(prompt_dialog, text=prompt_text)
-        prompt_label.pack(pady=10)
-
-        input_var = tk.StringVar()
-        input_entry = tk.Entry(prompt_dialog, textvariable=input_var)
-        input_entry.pack(pady=10)
-
-        send_button = tk.Button(prompt_dialog, text="Send", command=lambda: handle_input(prompt_dialog, input_var, process.stdin))
-        send_button.pack(pady=10)
+     #  send_button = tk.Button(prompt_dialog, text="Send", command=lambda: handle_input(prompt_dialog, input_var, process.stdin))
+      # send_button.pack(pady=10)
 
     def under_construction(self):
         messagebox.showinfo("Error", "This feature is under construction")
 
     def launch_netsec(self):
         #vs0.05 changes to using external script for the NetSec
-        subprocess.Popen(['pipenv', 'run', 'python', '/home/jrrosenbum/Etcher_Explorer/netsec_script.py'])
+        subprocess.Popen(['pipenv', 'run', 'python', 'netsec_script.py'])
         
         #if not hasattr(self, 'app') or QApplication.instance() is None: # Check if Qapplication is already open
 
@@ -213,10 +223,10 @@ class EtcherExplorerAPP(tk.Tk):
         self.app.exec()
 
     def launch_pass_save(self):
-        subprocess.run(['pipenv', 'run', 'python', '/home/jrrosenbum/Etcher_Explorer/pass_save.py'])
+        subprocess.run(['pipenv', 'run', 'python', 'pass_save.py'])
 
     def launch_smartcalc(self):
-        subprocess.Popen(['pipenv', 'run', 'python', '/home/jrrosenbum/Etcher_Explorer/smartcalc.py'])
+        subprocess.Popen(['pipenv', 'run', 'python', 'smartcalc.py'])
 
     def show_error_message(self):
         error_window = tk.Toplevel(self)
@@ -228,7 +238,7 @@ class EtcherExplorerAPP(tk.Tk):
     def create_button_row(self):
         button_frame = tk.Frame(self)
         button_frame.pack(fill='x', pady=10)
-        buttons = ["GitHub Interface", "Launch Terminal", "Launch File Manager", "Placeholder3"]
+        buttons = ["GitHub Interface", "Launch Terminal", "Launch File Manager", "Launch Chrome"]
         for button_text in buttons:
             self.create_button(button_frame, button_text)
 
@@ -239,8 +249,8 @@ class EtcherExplorerAPP(tk.Tk):
             button = tk.Button(frame, text=text, command=self.launch_alacritty)
         elif text == "Launch File Manager":
             button = tk.Button(frame, text=text, command=self.launch_file_manager)
-        else:
-            button = tk.Button(frame, text=text, command=self.under_construction)
+        elif text == "Launch Chrome":
+            button = tk.Button(frame, text=text, command=self.launch_chrome_gpu)
         button.pack(side='left', expand=True, fill='x', padx=5)
 
     def launch_github_interface(self):
@@ -308,28 +318,42 @@ class EtcherExplorerAPP(tk.Tk):
     def open_system_spy(self):
         monitor_window = tk.Toplevel(self)
         monitor_window.title("System Spy")
+        monitor_window.geometry("300x200")
 
         cpu_label = ttk.Label(monitor_window, text="CPU Usage:")
-        cpu_label.grid(row=0, column=0, padx=10, pady=5)
+        cpu_label.grid(row=0, column=0, padx=10, pady=5, sticky='w')
 
         memory_label = ttk.Label(monitor_window, text="Memory Usage:")
-        memory_label.grid(row=1, column=0, padx=10, pady=5)
+        memory_label.grid(row=1, column=0, padx=10, pady=5, sticky='w')
+
+        network_download_label = ttk.Label(monitor_window, text="Network Download:")
+        network_download_label.grid(row=2, column=0, padx=10, pady=5, sticky='w')
+
+        network_upload_label = ttk.Label(monitor_window, text="Network Upload:")
+        network_upload_label.grid(row=3, column=0, padx=10, pady=5, sticky='w')
 
         cpu_usage = ttk.Label(monitor_window, text=f"{psutil.cpu_percent()}%")
-        cpu_usage.grid(row=0, column=1, padx=10, pady=5)
+        cpu_usage.grid(row=0, column=1, padx=10, pady=5, sticky='e')
 
         memory_info = psutil.virtual_memory()
         memory_usage = ttk.Label(monitor_window, text=f"{memory_info.percent}%")
-        memory_usage.grid(row=1, column=1, padx=10, pady=5)
+        memory_usage.grid(row=1, column=1, padx=10, pady=5, sticky='e')
+
+        network_io = psutil.net_io_counters()
+        network_download = ttk.Label(monitor_window, text=f"{network_io.bytes_recv}")
+        network_download.grid(row=2, column=1, padx=10, pady=5, sticky='e')
+        
+        network_upload = ttk.Label(monitor_window, text=f"{network_io.bytes_sent}")
+        network_upload.grid(row=3, column=1, padx=10, pady=5, sticky='e')
 
         refresh_button = ttk.Button(monitor_window, text="Refresh", command=lambda: self.refresh_stats(cpu_usage, memory_usage))
-        refresh_button.grid(row=2, column=0, columnspan=2, pady=10)
+        refresh_button.grid(row=4, column=0, columnspan=2, pady=10, sticky='e')
 
         self.auto_refresh(cpu_usage, memory_usage)
     
-    def auto_refresh(self, cpu_label, memory_label):
-        self.refresh_stats(cpu_label, memory_label)
-        self.after(500, self.auto_refresh, cpu_label, memory_label)
+    def auto_refresh(self, cpu_label, memory_label, network_download, network_upload):
+        self.refresh_stats(cpu_label, memory_label, network_download, network_upload)
+        self.after(500, self.auto_refresh, cpu_label, memory_label, network_download, network_upload)
 
     def refresh_stats(self, cpu_label, memory_label):
         cpu_label.config(text=f"{psutil.cpu_percent()}%")
@@ -345,6 +369,9 @@ class EtcherExplorerAPP(tk.Tk):
                 raise FileNotFoundError
         except FileNotFoundError:
             messagebox.showinfo("Either no Graphics Processing Unit present in system\nor\nnvidia-smi not present in system, try command:\nsudo apt-get install nvidia-driver")
+
+    def launch_chrome_gpu(self):
+        subprocess.Popen(['gtk-launch', 'chrome-beta-gpu.desktop'])
 
     def open_compression_window(self):
         compression_window = tk.Toplevel(self)
@@ -491,6 +518,7 @@ class EtcherExplorerAPP(tk.Tk):
     def send_email(self, recipient, filename):
         try:
             subject = "File shared from Etcher Explorer"
+            body = "Please find the attached file."
             #Create mailto url
             mail_url = f"mailto:{recipient}?subject={subject}&body={body}"
             webbrowser.open(mail_url)
