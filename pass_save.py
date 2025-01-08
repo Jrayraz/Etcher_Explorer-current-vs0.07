@@ -3,6 +3,13 @@ import sys
 import json
 from PySide6.QtWidgets import (QApplication, QMainWindow, QScrollArea, QVBoxLayout, QWidget, QLabel, QPushButton, QLineEdit, QMenu, QDialog, QFormLayout, QHBoxLayout, QSizePolicy)
 from PySide6.QtCore import Qt
+import logging
+from cryptography.hazmat.primitives.ciphers.aead import AESGCM
+from cryptography.fernet import Fernet
+import base64
+from cryptography.hazmat.primitives import hashes
+from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
+from cryptography.hazmat.backends import default_backend
 
 class PassSave(QMainWindow):
     def __init__(self):
@@ -11,9 +18,15 @@ class PassSave(QMainWindow):
         self.setGeometry(100, 100, 600, 400)
         
         self.secrets_dir = os.path.join(os.getcwd(), ".config/.secrets")
+        self.keys_dir = os.path.join(os.getcwd(), ".config/.keys")
+        os.makedirs(self.keys_dir, exist_ok=True)
         os.makedirs(self.secrets_dir, exist_ok=True)
 
+        self.key = None
+
         self.initUI()
+        self.load_key()
+        self.dekrypt_directory(self.secrets_dir)
         self.load_accounts()  # Call load_accounts immediately after initializing the UI
 
     def initUI(self):
@@ -325,10 +338,103 @@ class PassSave(QMainWindow):
                 except (UnicodeDecodeError, json.JSONDecodeError) as e:
                     print(f"Error loading {account_file_path}: {e}")
 
+    def create_key(self):
+            try:
+                self.key = AESGCM.generate_key(bit_length=256)
+                self.save_key()
+                logging.info("Key created and saved successfully.")
+            except Exception as e:
+                logging.error(f"An error occurred during key creation: {e}")
+
+    def save_key(self):
+        try:
+            if not self.key:
+                logging.error("No key to save. Please create a key first.")
+                return
+            salt = os.urandom(16)
+            kdf = PBKDF2HMAC(algorithm=hashes.SHA256(), length=32, salt=salt, iterations=100000, backend=default_backend())
+            key = base64.urlsafe_b64encode(kdf.derive(b"password"))  # Replace 'password' with actual password logic
+            fernet = Fernet(key)
+            encrypted_key = fernet.encrypt(self.key)
+            file_path = os.path.join(self.keys_dir, 'pass_save.key')
+            with open(file_path, 'wb') as file:
+                file.write(salt)
+                file.write(encrypted_key)
+            logging.info("Key saved successfully.")
+        except Exception as e:
+            logging.error(f"Failed to save key: {e}")
+
+    def load_key(self):
+        file_path = os.path.join(self.keys_dir, 'pass_save.key')
+        if not os.path.exists(file_path):
+            self.create_key()
+        else:
+            try:
+                with open(file_path, 'rb') as file:
+                    salt = file.read(16)
+                    encrypted_key = file.read()
+                kdf = PBKDF2HMAC(algorithm=hashes.SHA256(), length=32, salt=salt, iterations=100000, backend=default_backend())
+                key = base64.urlsafe_b64encode(kdf.derive(b"password"))  # Replace 'password' with actual password logic
+                fernet = Fernet(key)
+                self.key = fernet.decrypt(encrypted_key)
+                logging.info("Key loaded successfully.")
+            except Exception as e:
+                logging.error(f"Failed to load key: {e}")
+
+    def encrypt(self, data):
+        nonce = os.urandom(12)
+        aesgcm = AESGCM(self.key)
+        encrypted_data = aesgcm.encrypt(nonce, data, None)
+        return nonce + encrypted_data
+
+    def decrypt(self, encrypted_data):
+        nonce = encrypted_data[:12]
+        ciphertext = encrypted_data[12:]
+        aesgcm = AESGCM(self.key)
+        try:
+            return aesgcm.decrypt(nonce, ciphertext, None)
+        except Exception as e:
+            logging.error(f"Error decrypting data: {e}")
+            raise
+
+    def krypt_directory(self, dir_path):
+        try:
+            for root, dirs, files in os.walk(dir_path):
+                for file in files:
+                    file_path = os.path.join(root, file)
+                    with open(file_path, 'rb') as f:
+                        data = f.read()
+                    encrypted_data = self.encrypt(data)
+                    with open(file_path + '.krypt', 'wb') as f:
+                        f.write(encrypted_data)
+                    os.remove(file_path)
+            logging.info("Directory encrypted successfully.")
+        except Exception as e:
+            logging.error(f"An error occurred during directory encryption: {e}")
+
+    def dekrypt_directory(self, dir_path):
+        try:
+            for root, dirs, files in os.walk(dir_path):
+                for file in files:
+                    if file.endswith('.krypt'):
+                        file_path = os.path.join(root, file)
+                        with open(file_path, 'rb') as f:
+                            encrypted_data = f.read()
+                        decrypted_data = self.decrypt(encrypted_data)
+                        new_file_path = file_path.replace('.krypt', '')
+                        with open(new_file_path, 'wb') as f:
+                            f.write(decrypted_data)
+                        os.remove(file_path)
+            logging.info("Directory decrypted successfully.")
+        except Exception as e:
+            logging.error(f"An error occurred during directory decryption: {e}")
+
+
     def load_accounts(self):
         self.refreshAccountWidgets()
 
     def closeApplication(self):
+        self.krypt_directory(self.secrets_dir)
         self.close()
 
 if __name__ == "__main__":
