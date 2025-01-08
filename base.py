@@ -48,6 +48,9 @@ class EtcherExplorerAPP(tk.Tk):
         self.key = None
         self.username = self.inspect_system()
         self.center_child_window(self)
+        self.available_ides = self.check_system()
+
+        self.show_available_ides()
 
     def inspect_system(self):
         return os.getlogin()
@@ -92,6 +95,11 @@ class EtcherExplorerAPP(tk.Tk):
             if subprocess.call(['which', command], stdout=subprocess.PIPE, stderr=subprocess.PIPE) == 0:
                 available_ides[ide_name] = command
         return available_ides
+
+    def show_available_ides(self):
+        ide_list = '\n'.join([f"{ide}: {command}" for ide, command in self.available_ides.items()]
+        messagebox.showinfo("Available IDEs", f"The following IDEs are available:\n\n{ide_list}")
+                             
 
     def create_menus(self):
         # Create "File" menu
