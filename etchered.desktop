@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name=Etcher Explorer
+Comment=Launch Etcher Explorer
+Exec=bash -c "cd $(dirname $0)/Etcher_Explorer && pipenv sync && pipenv run python3 base.py"
+Icon=$(dirname $0)/Etcher_Explorer/.icon.ico
+Terminal=false
+Type=Application
+

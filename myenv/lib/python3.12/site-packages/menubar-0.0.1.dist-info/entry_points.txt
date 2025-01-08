@@ -1,0 +1,3 @@
+[console_scripts]
+menubar = menubar.__main__:main
+

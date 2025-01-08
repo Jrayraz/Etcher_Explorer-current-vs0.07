@@ -1,0 +1,25 @@
+Metadata-Version: 2.1
+Name: menubar
+Version: 0.0.1
+Summary: Cool Python app built with Pyrustic
+Home-page: https://github.com/pyrustic/menubar
+Author: Pyrustic Evangelist
+Author-email: rusticalex@yahoo.com
+Maintainer: Pyrustic Evangelist
+Maintainer-email: rusticalex@yahoo.com
+License: MIT
+Keywords: library
+Platform: UNKNOWN
+Classifier: Programming Language :: Python :: 3
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Operating System :: OS Independent
+Requires-Python: >=3.5
+Description-Content-Type: text/markdown
+Requires-Dist: shared
+Requires-Dist: backstage
+
+# Welcome to my awesome project !
+
+Visit the [Pyrustic Open Ecosystem](https://pyrustic.github.io) !
+
+

@@ -1,0 +1,3 @@
+[console_scripts]
+jesth = jesth.__main__:main
+

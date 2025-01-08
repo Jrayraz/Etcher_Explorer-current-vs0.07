@@ -1,0 +1,2 @@
+[console_scripts]
+shared = shared.__main__:main

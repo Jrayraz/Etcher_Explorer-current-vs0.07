@@ -1,0 +1,2 @@
+[console_scripts]
+braq = braq.__main__:main

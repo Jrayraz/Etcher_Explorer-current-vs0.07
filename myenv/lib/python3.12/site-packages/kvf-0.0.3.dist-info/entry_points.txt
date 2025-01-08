@@ -1,0 +1,2 @@
+[console_scripts]
+kvf = kvf.__main__:main
