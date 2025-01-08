@@ -320,46 +320,52 @@ class EtcherExplorerAPP(tk.Tk):
         monitor_window.title("System Spy")
         monitor_window.geometry("300x200")
 
-        cpu_label = ttk.Label(monitor_window, text="CPU Usage:")
+        stats_frame = tk.Frame(monitor_window)
+        stats_frame.pack(pady=10)
+
+        cpu_label = ttk.Label(stats_frame, text="CPU Usage:")
         cpu_label.grid(row=0, column=0, padx=10, pady=5, sticky='w')
 
-        memory_label = ttk.Label(monitor_window, text="Memory Usage:")
+        memory_label = ttk.Label(stats_frame, text="Memory Usage:")
         memory_label.grid(row=1, column=0, padx=10, pady=5, sticky='w')
 
-        network_download_label = ttk.Label(monitor_window, text="Network Download:")
+        network_download_label = ttk.Label(stats_frame, text="Network Download:")
         network_download_label.grid(row=2, column=0, padx=10, pady=5, sticky='w')
 
-        network_upload_label = ttk.Label(monitor_window, text="Network Upload:")
+        network_upload_label = ttk.Label(stats_frame, text="Network Upload:")
         network_upload_label.grid(row=3, column=0, padx=10, pady=5, sticky='w')
 
-        cpu_usage = ttk.Label(monitor_window, text=f"{psutil.cpu_percent()}%")
+        cpu_usage = ttk.Label(stats_frame, text=f"{psutil.cpu_percent()}%")
         cpu_usage.grid(row=0, column=1, padx=10, pady=5, sticky='e')
 
         memory_info = psutil.virtual_memory()
-        memory_usage = ttk.Label(monitor_window, text=f"{memory_info.percent}%")
+        memory_usage = ttk.Label(stats_frame, text=f"{memory_info.percent}%")
         memory_usage.grid(row=1, column=1, padx=10, pady=5, sticky='e')
 
         network_io = psutil.net_io_counters()
-        network_download = ttk.Label(monitor_window, text=f"{network_io.bytes_recv}")
+        network_download = ttk.Label(stats_frame, text=f"{network_io.bytes_recv}")
         network_download.grid(row=2, column=1, padx=10, pady=5, sticky='e')
         
-        network_upload = ttk.Label(monitor_window, text=f"{network_io.bytes_sent}")
+        network_upload = ttk.Label(stats_frame, text=f"{network_io.bytes_sent}")
         network_upload.grid(row=3, column=1, padx=10, pady=5, sticky='e')
 
-        refresh_button = ttk.Button(monitor_window, text="Refresh", command=lambda: self.refresh_stats(cpu_usage, memory_usage))
+        refresh_button = ttk.Button(stats_frame, text="Refresh", command=lambda: self.refresh_stats(cpu_usage, memory_usage, network_download, network_upload))
         refresh_button.grid(row=4, column=0, columnspan=2, pady=10, sticky='e')
-
-        self.auto_refresh(cpu_usage, memory_usage)
     
+        self.auto_refresh(cpu_usage, memory_usage, network_download, network_upload)
+
     def auto_refresh(self, cpu_label, memory_label, network_download, network_upload):
         self.refresh_stats(cpu_label, memory_label, network_download, network_upload)
         self.after(500, self.auto_refresh, cpu_label, memory_label, network_download, network_upload)
 
-    def refresh_stats(self, cpu_label, memory_label):
+    def refresh_stats(self, cpu_label, memory_label, network_download, network_upload):
         cpu_label.config(text=f"{psutil.cpu_percent()}%")
         memory_info = psutil.virtual_memory()
         memory_label.config(text=f"{memory_info.percent}%")
-        
+        network_io = psutil.net_io_counters()
+        network_download.config(text=f"{network_io.bytes_recv}")
+        network_upload.config(text=f"{network_io.bytes_sent}")
+   
     def launch_gpu_monitor(self):
         try:
             result = subprocess.run(['nvidia-smi'], capture_output=True, text=True)
