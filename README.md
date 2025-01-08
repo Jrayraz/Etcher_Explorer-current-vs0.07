@@ -30,3 +30,11 @@ Type=Application
 
 # I made this program for personal use, so the directory names in some instances may need to be adjusted as I just recently decided to share it, and it is still in development so i have not adjust all the directory paths fully.
 
+# On a final not. The cpu_freak.py sometimes require you editing the grub configuration to add the userspace to the governor. Look for this a line with: GRUB_"CMDLINE_LINUX_DEFAULT="......change the value to
+CMD_LINUX_DEFAULT="quiet spash intel_pstate=disable cpufreq.default_governor=userspace"
+# CPU Freak Control also requires a password prompt. The program has to be opened with a terminal command so that is behind the base.py GUI, so that when cpu_freak.py is called you can switch back to the terminal to input your password. If your like me and want the program to run off a etcher.desktop file and prefer with out window you can use command:
+sudo visudo
+# Once the sudoers file is open (NOTE: DO NOT OPEN THROUGH OTHER MEANS ALWAYS 'SUDO VISUDO') add this configuration:
+username ALL=(ALL) NOPASSWD: /path/to/base.py
+username ALL=(ALL) NOPASSWD: /path/to/cpu_freak.py
+# This will remove the password prompt on base.py execution or cpu_freak.py execution.
