@@ -437,6 +437,10 @@ class PassSave(QMainWindow):
         self.krypt_directory(self.secrets_dir)
         self.close()
 
+    def closeEvent(self, event):
+        self.krypt_directory(self.secrets_dir)
+        event.accept()
+
 if __name__ == "__main__":
     app = QApplication(sys.argv)
     window = PassSave()
