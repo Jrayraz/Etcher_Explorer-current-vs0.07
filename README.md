@@ -21,7 +21,7 @@ Etcher Explorer is a comprehensive tool for managing files, directories, and var
 
 ## Setup
 # There are several dependencies for this project starting with apt packages:
-sudo apt-get install pipenv python3-full python3-dev genisoimage ffmpeg ifupdown build-essential libssl-dev libffi-dev snapd cpufrequtils isc-dhcp-client dolphin ubuntu-drivers-common spyder nuitka libxcb-cursor0 pcscd gnome-screenshot
+sudo apt-get install pipenv python3-full python3-dev genisoimage ffmpeg ifupdown build-essential libssl-dev libffi-dev snapd cpufrequtils isc-dhcp-client dolphin ubuntu-drivers-common spyder nuitka libxcb-cursor0 pcscd gnome-screenshot xtarfile[zstd]
 
 # Snap dependencies
 sudo snap install alacritty --classic
