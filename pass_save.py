@@ -11,6 +11,9 @@ from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 from cryptography.hazmat.backends import default_backend
 
+# Enable GPU acceleration
+os.environ["QT_OPENGL"] = "angle"
+
 class PassSave(QMainWindow):
     def __init__(self):
         super().__init__()
@@ -27,7 +30,7 @@ class PassSave(QMainWindow):
         self.initUI()
         self.load_key()
         self.dekrypt_directory(self.secrets_dir)
-        self.load_accounts()  # Call load_accounts immediately after initializing the UI
+        self.load_accounts()
 
     def initUI(self):
         self.centralWidget = QWidget()
@@ -50,14 +53,14 @@ class PassSave(QMainWindow):
         self.addButton.clicked.connect(self.showAddMenu)
         
         # Add red "x" button
-        self.closeButton = QPushButton("x", self)
-        self.closeButton.setFixedSize(40, 40)
-        self.closeButton.setStyleSheet("QPushButton { color: red; }")
-        self.closeButton.clicked.connect(self.closeApplication)
+       # self.closeButton = QPushButton("x", self)
+       # self.closeButton.setFixedSize(40, 40)
+       # self.closeButton.setStyleSheet("QPushButton { color: red; }")
+       # self.closeButton.clicked.connect(self.closeApplication)
 
         self.buttonLayout = QHBoxLayout()
         self.buttonLayout.addWidget(self.addButton)
-        self.buttonLayout.addWidget(self.closeButton)
+#        self.buttonLayout.addWidget(self.closeButton)
         self.layout.addLayout(self.buttonLayout)
 
     def showAddMenu(self):
@@ -339,12 +342,12 @@ class PassSave(QMainWindow):
                     print(f"Error loading {account_file_path}: {e}")
 
     def create_key(self):
-            try:
-                self.key = AESGCM.generate_key(bit_length=256)
-                self.save_key()
-                logging.info("Key created and saved successfully.")
-            except Exception as e:
-                logging.error(f"An error occurred during key creation: {e}")
+        try:
+            self.key = AESGCM.generate_key(bit_length=256)
+            self.save_key()
+            logging.info("Key created and saved successfully.")
+        except Exception as e:
+            logging.error(f"An error occurred during key creation: {e}")
 
     def save_key(self):
         try:
@@ -429,13 +432,8 @@ class PassSave(QMainWindow):
         except Exception as e:
             logging.error(f"An error occurred during directory decryption: {e}")
 
-
     def load_accounts(self):
         self.refreshAccountWidgets()
-
-    def closeApplication(self):
-        self.krypt_directory(self.secrets_dir)
-        self.close()
 
     def closeEvent(self, event):
         self.krypt_directory(self.secrets_dir)

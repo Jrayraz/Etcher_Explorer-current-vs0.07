@@ -1,40 +1,46 @@
-# Etcher_ExplorerVS0.07
- Computer Multi-Tool text editor, cpu core control, encryption of resting files, password vault with built in encryption, system monitor, network security tool, and more.
-####### IN DEVELOPMENT: MAY NOT WORK OR PRODUCE UNEXPECTED RESULTS!!!#############
-# Install dependencies
-sudo apt-get install python3-full python3-venv python3-pip cpufrequtils ifupdown isc-dhcp-client ubuntu-drivers-common dolphin pipenv
-# Begin building the environment
-python3 -m venv myenv
-source myenv/bin/activate
-pip install pipenv
-# Create the environment
-pipenv install -r requirements.txt
-pipenv lock
+# Etcher Explorer
 
-# To open GUI:
-# Change to dir/of/prog, and run:
-pipenv install
-pipenv run pyton3 base.py
+Etcher Explorer is a comprehensive tool for managing files, directories, and various system utilities. It includes features for encryption, cpu control, compression, system monitoring, and more. It also includes several GPU-Enabled features.
 
-# You can create a etcher.desktop file for easy access:
+## Features
 
-[Desktop Entry]
-Name=Etcher Explorer
-Comment=Launch Etcher Explorer
-Exec=bash -c "cd /dir/of/Etcher_Explorer && pipenv sync && pipenv run python3 base.py"
-Icon=/dir/of/Etcher_Explorer/.icon.ico
-Terminal=false
-Type=Application
+- File and directory management
+- Encryption and decryption of files and directories
+- Compression and extraction of files
+- System monitoring tools
+- Integration with various IDEs
+- Compilation of various programming languages
+- CPU Control
+- Backup and Restore
+- Text Editor
+- Video Player
+- Photo Editor
+- Network Security Features
+- Password Management 
+- More
 
-# Copying or creating a symlink of the desktop file in the /.local/share/applications folder will add it to the app launcher and allow it to be pinned to your taskbar.
+## Setup
+# There are several dependencies for this project starting with apt packages:
+sudo apt-get install pipenv python3-full python3-dev genisoimage ffmpeg ifupdown build-essential libssl-dev libffi-dev snapd cpufrequtils isc-dhcp-client dolphin ubuntu-drivers-common spyder nuitka libxcb-cursor0 pcscd gnome-screenshot
 
-# I made this program for personal use, so the directory names in some instances may need to be adjusted as I just recently decided to share it, and it is still in development so i have not adjust all the directory paths fully.
+# Snap dependencies
+sudo snap install alacritty --classic
 
-# On a final not. The cpu_freak.py sometimes require you editing the grub configuration to add the userspace to the governor. Look for this a line with: GRUB_"CMDLINE_LINUX_DEFAULT="......change the value to
-CMD_LINUX_DEFAULT="quiet spash intel_pstate=disable cpufreq.default_governor=userspace"
-# CPU Freak Control also requires a password prompt. The program has to be opened with a terminal command so that is behind the base.py GUI, so that when cpu_freak.py is called you can switch back to the terminal to input your password. If your like me and want the program to run off a etcher.desktop file and prefer with out window you can use command:
-sudo visudo
-# Once the sudoers file is open (NOTE: DO NOT OPEN THROUGH OTHER MEANS ALWAYS 'SUDO VISUDO') add this configuration:
-username ALL=(ALL) NOPASSWD: /path/to/base.py
-username ALL=(ALL) NOPASSWD: /path/to/cpu_freak.py
-# This will remove the password prompt on base.py execution or cpu_freak.py execution.
+# Environment dependencies
+pipenv install PySide6 tk logging cryptography psutil py7zr screeninfo pydub pillow opencv-python-headless requests webbrowser beautifulsoup4 nuitka ffpyplayer
+
+# Github (Used for scanning for malware)
+cd /program/dir
+gh repo clone aaryanrlondhe/Malware-Hash-Database
+sudo mv Malware-Hash-Database hashes 
+
+# IF you have a GPU installed and wish to use the GPU-Enabled features run:
+sudo ubuntu-drivers autoinstall
+
+# To run the program
+pipenv run python3 main.py
+
+# If desired you can create a .desktop file for ease-of-access to the program
+# If you have a yubico security key you can install the Yubico Authenticator from the Yubico website and then move the directory to your project directory and rename the directory "SecKey" to enable the "Security Key Interface" button. If you do not have a Yubico Security key or the authenticator the "Security Key Interface" button will be broken
+
+# PLEASE keep in mind this project is in development, and I am open to any contributions to the project. However, do not get upset if some features do not work as intended. If dependencies are correctly configured, and you have the Yubico Security Key and Yubico Authenticator all features should work, but no promises Etcher Explorer is still under development and undergoing constant change so some features may currently be broke. If so, email me at: jonathan.rosenbum@shitzoid-software.com and I will do my best to work with you to resolve any issues.

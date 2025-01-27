@@ -7,6 +7,9 @@ import requests
 from PySide6.QtWidgets import QApplication, QVBoxLayout, QHBoxLayout, QPushButton, QLabel, QWidget, QFileDialog, QDialog, QMessageBox, QTextEdit, QTableWidget, QTableWidgetItem, QLineEdit, QInputDialog
 from PySide6.QtNetwork import QNetworkInterface, QHostAddress
 
+# Enable GPU acceleration
+os.environ["QT_OPENGL"] = "angle"
+
 class NetSec(QWidget):
     def __init__(self):
         super().__init__()
@@ -127,8 +130,11 @@ class NetSec(QWidget):
                         ip_info += f"  Netmask: {entry.netmask().toString()}\n"
                         ip_info += f"  Broadcast: {entry.broadcast().toString()}\n"
 
-        public_ip = requests.get('https://api.ipify.org').text
-        ip_info += f"Public IPv4: {public_ip}\n"
+        try:
+            public_ip = requests.get('https://api.ipify.org').text
+            ip_info += f"Public IPv4: {public_ip}\n"
+        except requests.RequestException as e:
+            ip_info += f"Public IPv4: Error retrieving public IP ({e})\n"
 
         return ip_info
 
@@ -197,11 +203,14 @@ class NetSec(QWidget):
         if ok and mac_address:
             api_key = "01jgszdp7d9ke14zq4rbgn78rk01jgszh7pdcs71at0413mmrqkj0oqjfudmfsmj"
             url = f"https://api.maclookup.app/v2/macs/{mac_address}?apiKey={api_key}"
-            response = requests.get(url)
-            if response.status_code == 200:
-                self.display_mac_info(response.json())
-            else:
-                self.show_message("Error", f"Failed to retrieve information for MAC address {mac_address}. Status code: {response.status_code}")
+            try:
+                response = requests.get(url)
+                if response.status_code == 200:
+                    self.display_mac_info(response.json())
+                else:
+                    self.show_message("Error", f"Failed to retrieve information for MAC address {mac_address}. Status code: {response.status_code}")
+            except requests.RequestException as e:
+                self.show_message("Error", f"Network error occurred: {e}")
 
     def display_mac_info(self, mac_info):
         dialog = QDialog(self)
