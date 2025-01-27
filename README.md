@@ -41,7 +41,7 @@ sudo ubuntu-drivers autoinstall
 pipenv run python3 main.py
 
 # If desired you can create a .desktop file for ease-of-access to the program
-# If you have a yubico security key you can install the Yubico Authenticator from the Yubico website and then move the directory to your project directory and rename the directory "SecKey" to enable the "Security Key Interface" button. If you do not have a Yubico Security key or the authenticator the "Security Key Interface" button will be broken
+# If you have a security key, for example a Yubico security key you can install the interface for your security key, such as the Yubico Authenticator, from the security key manufactorers website.Then move the directory of the security key's interface to your project directory and rename the directory "SecKey" to enable the "Security Key Interface" button. If you do not have a security key with a GUI interface to manage the security key as the SecKey directory in your project directory then the "Security Key Interface" button will be broken
 
 # PLEASE keep in mind this project is in development, and I am open to any contributions to the project. However, do not get upset if some features do not work as intended. If dependencies are correctly configured, and you have the Yubico Security Key and Yubico Authenticator all features should work, but no promises Etcher Explorer is still under development and undergoing constant change so some features may currently be broke. If so, email me at: jonathan.rosenbum@shitzoid-software.com and I will do my best to work with you to resolve any issues.
 
