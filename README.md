@@ -41,3 +41,4 @@ sudo ubuntu-drivers autoinstall
 pipenv run python3 main.py
 
 # If desired you can create a .desktop file for ease-of-access to the program
+# If you have a yubico security key you can install the Yubico Authenticator from the Yubico website and then move the directory to your project directory and rename the directory "SecKey" to enable the "Security Key Interface" button. If you do not have a Yubico Security key or the authenticator the "Security Key Interface" button will be broken
