@@ -25,7 +25,6 @@ import random
 import string
 
 
-
 # Set up logging
 logging.basicConfig(filename='etched.log', level=logging.DEBUG, 
                    format='%(asctime)s - %(levelname)s - %(message)s')
@@ -107,7 +106,7 @@ class EtcherExplorerAPP(tk.Tk):
         self.undo_button = tk.Button(self.top_right_frame, text="Undo", width=15, command=self.undo_text)
         self.redo_button = tk.Button(self.top_right_frame, text="Redo", width=15, command=self.redo_text)
         self.open_dir_button = tk.Button(self.top_right_frame, text="Open Directory", width=32, command=self.open_directory)
-        self.comp_2 = tk.Button(self.top_right_frame, text="Diff", width=15, command=lambda: self.open_new_terminal('pipenv run python3 compare_two.py'))
+        self.comp_2 = tk.Button(self.top_right_frame, text="Diff", width=15, command=lambda: self.open_new_terminal('pipenv run python3 comp2.py'))
         self.copy_btn = tk.Button(self.top_right_frame, text="Copy", width=15, command=self.copy_text)
         self.paste_btn = tk.Button(self.top_right_frame, text="Paste", width=15, command=self.paste_text)
         self.man_key_btn = tk.Button(self.top_right_frame, text="Keys", width=15, command=lambda: self.open_new_terminal('pipenv run python3 key_short.py'))
@@ -279,6 +278,7 @@ class EtcherExplorerAPP(tk.Tk):
         except tk.TclError:
             pass
 
+
     def generate_password(event=None):
         try:
             length = random.randint(7, 12)
@@ -288,6 +288,7 @@ class EtcherExplorerAPP(tk.Tk):
         except Exception as e:
             messagebox.showinfo("ERROR!", f"Failed to generate password!\nError:\n{e}")
             logging.error("ERROR!", f"Failed to generate password!\nError:\n{e}")
+
 
     def inspect_system(self):
         return os.getlogin()
@@ -1531,24 +1532,36 @@ class EtcherExplorerAPP(tk.Tk):
         backup_restore_window = Toplevel(self)
         backup_restore_window.title("Backup and Restore")
         backup_restore_window.geometry("600x400")
+        
+        # Backup Options Frame
         backup_frame = Frame(backup_restore_window)
         backup_frame.pack(fill='both', expand=True, padx=10, pady=10)
+        
         backup_label = Label(backup_frame, text="Backup Options")
         backup_label.pack()
+        
         iso_button = Button(backup_frame, text="Create ISO Backup", command=self.create_iso_backup)
         iso_button.pack(fill='x', pady=5)
+        
         zip_button = Button(backup_frame, text="Create ZIP Backup", command=self.create_zip_backup)
         zip_button.pack(fill='x', pady=5)
+        
         tar_button = Button(backup_frame, text="Create TAR Backup", command=self.create_tar_backup)
         tar_button.pack(fill='x', pady=5)
+        
         sevenz_button = Button(backup_frame, text="Create 7z Backup", command=self.create_7z_backup)
         sevenz_button.pack(fill='x', pady=5)
+        
         custom_button = Button(backup_frame, text="Create Custom Backup", command=self.create_custom_backup)
         custom_button.pack(fill='x', pady=5)
+        
+        # Restore Options Frame
         restore_frame = Frame(backup_restore_window)
         restore_frame.pack(fill='both', expand=True, padx=10, pady=10)
+        
         restore_label = Label(restore_frame, text="Restore Options")
         restore_label.pack()
+        
         restore_button = Button(restore_frame, text="Restore from Backup", command=self.restore_backup)
         restore_button.pack(fill='x', pady=5)
 
@@ -1599,7 +1612,7 @@ class EtcherExplorerAPP(tk.Tk):
                     messagebox.showerror("Error", f"Failed to create 7z backup: {e}")
 
     def restore_backup(self):
-        backup_file = filedialog.askopenfilename(title="Select Backup File", filetypes=[("All Files", "*.*", )])
+        backup_file = filedialog.askopenfilename(title="Select Backup File", filetypes=[("All Files", "*.*")])
         if backup_file:
             restore_dir = filedialog.askdirectory(title="Select Directory to Restore To")
             if restore_dir:
@@ -1617,9 +1630,9 @@ class EtcherExplorerAPP(tk.Tk):
                             archive.extractall(path=restore_dir)
                     elif backup_file.endswith('.custom'):
                         messagebox.showinfo("Info", "Custom backup format not supported for restoration.")
+                    messagebox.showinfo("Success", "Backup restored.")
                 except Exception as e:
                     messagebox.showerror("Error", f"Failed to restore backup: {e}")
-            messagebox.showinfo("Success", "Backup restored.")
 
     def delete_file(self):
         filename = self.browse_files()
