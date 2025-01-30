@@ -23,7 +23,7 @@ from PIL import Image, ImageTk
 import matplotlib
 import random
 import string
-
+import json
 
 # Set up logging
 logging.basicConfig(filename='etched.log', level=logging.DEBUG, 
@@ -51,6 +51,8 @@ class EtcherExplorerAPP(tk.Tk):
         self.create_menus()
         self.create_text_field()
         self.setup_logging()
+        self.shortcut_file = "shortcuts.json"
+        self.check_and_create_shortcuts_file()
         self.create_shortcuts()
         self.create_combined_bottom_buttons()
         self.create_top_right_buttons()
@@ -109,7 +111,7 @@ class EtcherExplorerAPP(tk.Tk):
         self.comp_2 = tk.Button(self.top_right_frame, text="Diff", width=15, command=lambda: self.open_new_terminal('pipenv run python3 comp2.py'))
         self.copy_btn = tk.Button(self.top_right_frame, text="Copy", width=15, command=self.copy_text)
         self.paste_btn = tk.Button(self.top_right_frame, text="Paste", width=15, command=self.paste_text)
-        self.man_key_btn = tk.Button(self.top_right_frame, text="Keys", width=15, command=lambda: self.open_new_terminal('pipenv run python3 key_short.py'))
+        self.man_key_btn = tk.Button(self.top_right_frame, text="Keys", width=15, command=self.open_shortcut_customizer)
 
         self.open_button.grid(row=0, column=0, padx=5, pady=5)
         self.save_button.grid(row=0, column=1, padx=5, pady=5)
@@ -164,6 +166,10 @@ class EtcherExplorerAPP(tk.Tk):
         self.sec_settings.grid(row=4, column=1, padx=5, pady=5)
         self.sys_sec_settings.grid(row=4, column=2, padx=5, pady=5)
         self.sec_key.grid(row=4, column=3, padx=5, pady=5)
+
+    def check_and_create_shortcuts_file(self):
+        if not os.path.exists(self.shortcut_file):
+            self.create_default_shortcuts()
 
     def create_text_field(self):
         self.text_field = ScrolledText(self.top_center_frame, wrap='word', undo=True)
@@ -256,55 +262,17 @@ class EtcherExplorerAPP(tk.Tk):
             "<Control-y>": lambda e: self.text_field.edit_redo() if self.text_field else None,
             "<Control-s>": lambda e: self.save_file(),
             "<Control-o>": lambda e: self.open_file(),
-            "<Control-n>": lambda e: self.create_file(),
+           # "<Control-n>": lambda e: self.create_file(),
             "<Control-c>": lambda e: self.copy_text(),
             "<Control-v>": lambda e: self.paste_text()
         }
         for key, command in shortcuts.items():
             self.bind_all(key, command)
 
-    def copy_text(self):
-        try:
-            self.clipboard_clear()
-            selected_text = self.text_field.get(tk.SEL_FIRST, tk.SEL_LAST)
-            self.clipboard_append(selected_text)
-        except tk.TclError:
-            pass
-    
-    def paste_text(self):
-        try:
-            clipboard_text = self.clipboard.get()
-            self.text_field.insert(tk.INSERT, clipboard_text)
-        except tk.TclError:
-            pass
-
-
-    def generate_password(event=None):
-        try:
-            length = random.randint(7, 12)
-            all_characters = string.ascii_letters + string.digits + string.punctuation
-            password = ''.join(random.choice(all_characters) for i in range(length))
-            messagebox.showinfo("Generated Password", password)
-        except Exception as e:
-            messagebox.showinfo("ERROR!", f"Failed to generate password!\nError:\n{e}")
-            logging.error("ERROR!", f"Failed to generate password!\nError:\n{e}")
 
 
     def inspect_system(self):
         return os.getlogin()
-
-   
-    def open_ide(self, command):
-        subprocess.Popen([command])
-    
-    def open_vscode(self):
-        if subprocess.call(['which', 'code'], stdout=subprocess.PIPE, stderr=subprocess.PIPE) == 0:
-            self.open_ide('code')
-        else:
-            webbrowser.open('https://vscode.dev')
-
-    def open_dartpad(self):
-        webbrowser.open('https://dartpad.dev')
 
     def check_system(self):
         ides = {
@@ -334,22 +302,6 @@ class EtcherExplorerAPP(tk.Tk):
     def open_new_terminal(self, command):
         try:
             subprocess.Popen(['alacritty', '-e', 'bash', '-c', command])
-        except Exception as e:
-            messagebox.showinfo("Error", f"Error opening terminal: {e}")
-            logging.error(f"Error opening terminal: {e}")
-
-
-    def open_microsoft_account_security(self):
-        url = "https://account.microsoft.com/security"
-        webbrowser.open(url)
-
-    def open_google_account_security(self):
-        url = "https://myaccount.google.com/security"
-        webbrowser.open(url)
-
-    def open_seckey(self):
-        try:
-            subprocess.Popen(['bash', '-c', 'cd ~/Etcher_Explorer/SecKey && ./authenticator'])
         except Exception as e:
             messagebox.showinfo("Error", f"Error opening terminal: {e}")
             logging.error(f"Error opening terminal: {e}")
@@ -441,24 +393,70 @@ class EtcherExplorerAPP(tk.Tk):
         system_menu.add_command(label="GPU Monitor", command=self.launch_gpu_monitor)
         self.menu_bar.add_cascade(label="System", menu=system_menu)
 
+    def create_default_shortcuts(self):
+        default_shortcuts = { 
+            "undo": "<Control-z>",
+            "redo": "<Control-y>",
+            "cut": "<Control-x>",
+            "copy": "<Control-c>",
+            "paste": "<Control-v>",
+            "open_file": "<Control-o>",
+            "save_file": "<Control-s>",
+            "new_file": "<Control-n>",
+            "rename_file": "<Control-r>",
+            "open_in_vscode": "<Control-p>",
+            "compress_file": "<Control-b>",
+            "restore_backup": "<Control-e>"
+        }
+        with open(self.shortcut_file, "w") as file:
+            json.dump(default_shortcuts, file)
+
+    def load_shortcuts(self):
+        with open(self.shortcut_file, "r") as file:
+            return json.load(file)
+
+    def open_shortcut_customizer(self):
+        customizer_window = tk.Toplevel(self)
+        customizer_window.title("Customize Shortcuts")
+
+        shortcuts = self.load_shortcuts()
+        self.shortcut_entries = {}
+
+        for idx, (action, shortcut) in enumerate(shortcuts.items()):
+            tk.Label(customizer_window, text=action.replace("_", " ").title()).grid(row=idx, column=0, padx=5, pady=5)
+            entry = tk.Entry(customizer_window)
+            entry.insert(0, shortcut)
+            entry.grid(row=idx, column=1, padx=5, pady=5)
+            entry.bind("<Key>", lambda e, action=action: self.update_shortcut(action, e))
+            self.shortcut_entries[action] = entry
+
+        tk.Button(customizer_window, text="Save", command=self.save_shortcuts).grid(row=len(shortcuts), column=1, pady=10)
+        tk.Button(customizer_window, text="Restore Defaults", command=self.restore_defaults).grid(row=len(shortcuts)+1, column=1, pady=10)
+
+    def update_shortcut(self, action, event):
+        self.shortcut_entries[action].delete(0, tk.END)
+        self.shortcut_entries[action].insert(0, f"<{event.keysym}>")
+
+    def save_shortcuts(self):
+        new_shortcuts = {action: entry.get() for action, entry in self.shortcut_entries.items()}
+        with open(self.shortcut_file, "w") as file:
+            json.dump(new_shortcuts, file)
+        messagebox.showinfo("Success", "Shortcuts updated successfully!")
+
     def create_shortcuts(self):
-        self.bind_all("<Control-z>", lambda event: self.text_field.edit_undo())
-        self.bind_all("<Control-y>", lambda event: self.text_field.edit_redo())
-        self.bind_all("<Control-x>", lambda event: self.text_field.event_generate("<<Cut>>"))
-        self.bind_all("<Control-c>", lambda event: self.text_field.event_generate("<<Copy>>"))
-        self.bind_all("<Control-v>", lambda event: self.text_field.event_generate("<<Paste>>"))
-        self.bind_all("<Control-o>", lambda event: self.open_file())
-        self.bind_all("<Control-s>", lambda event: self.save_file())
-        self.bind_all("<Control-n>", lambda event: self.create_file(0))
-        self.bind_all("<Control-d>", lambda event: self.delete_file())
-        self.bind_all("<Control-r>", lambda event: self.rename_file())
-        self.bind_all("<Control-k>", lambda event: self.krypt_data())
-        self.bind_all("<Control-u>", lambda event: self.dekrypt_data())
-        self.bind_all("<Control-p>", lambda event: self.open_in_vscode())
-        self.bind_all("<Control-b>", lambda event: self.compress_files())
-        self.bind_all("<Control-e>", lambda event: self.extract_zip())
-    
-    
+        shortcuts = self.load_shortcuts()
+        self.bind_all(shortcuts["undo"], lambda event: self.text_field.edit_undo())
+        self.bind_all(shortcuts["redo"], lambda event: self.text_field.edit_redo())
+        self.bind_all(shortcuts["cut"], lambda event: self.text_field.event_generate("<<Cut>>"))
+        self.bind_all(shortcuts["copy"], lambda event: self.text_field.event_generate("<<Copy>>"))
+        self.bind_all(shortcuts["paste"], lambda event: self.text_field.event_generate("<<Paste>>"))
+        self.bind_all(shortcuts["open_file"], lambda event: self.open_file())
+        self.bind_all(shortcuts["save_file"], lambda event: self.save_file())
+        self.bind_all(shortcuts["open_in_vscode"], lambda event: self.open_in_vscode())
+        self.bind_all(shortcuts["compress_file"], lambda event: self.create_zip_backup())
+        self.bind_all(shortcuts["restore_backup"], lambda event: self.restore_backup())
+        self.bind_all(shortcuts["rename_file"], lambda event: self.text_field.event_generate("<<Rename>>"))
+
     def show_shortcuts(self):
         shortcuts = [
             "Ctrl+Z: Undo",
@@ -478,6 +476,80 @@ class EtcherExplorerAPP(tk.Tk):
             "Ctrl+E: Extract Zip"
         ]
         messagebox.showinfo("Keyboard Shortcuts", "\n".join(shortcuts))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    def open_microsoft_account_security(self):
+        url = "https://account.microsoft.com/security"
+        webbrowser.open(url)
+
+    def open_google_account_security(self):
+        url = "https://myaccount.google.com/security"
+        webbrowser.open(url)
+
+   
+    def open_ide(self, command):
+        subprocess.Popen([command])
+    
+    def open_vscode(self):
+        if subprocess.call(['which', 'code'], stdout=subprocess.PIPE, stderr=subprocess.PIPE) == 0:
+            self.open_ide('code')
+        else:
+            webbrowser.open('https://vscode.dev')
+
+    def open_dartpad(self):
+        webbrowser.open('https://dartpad.dev')
+
+    def generate_password(event=None):
+        try:
+            length = random.randint(7, 12)
+            all_characters = string.ascii_letters + string.digits + string.punctuation
+            password = ''.join(random.choice(all_characters) for i in range(length))
+            messagebox.showinfo("Generated Password", password)
+        except Exception as e:
+            messagebox.showinfo("ERROR!", f"Failed to generate password!\nError:\n{e}")
+            logging.error("ERROR!", f"Failed to generate password!\nError:\n{e}")
+
+    def open_seckey(self):
+        try:
+            subprocess.Popen(['bash', '-c', 'cd ~/Etcher_Explorer/SecKey && ./authenticator'])
+        except Exception as e:
+            messagebox.showinfo("Error", f"Error opening terminal: {e}")
+            logging.error(f"Error opening terminal: {e}")
+
+    def copy_text(self):
+        try:
+            self.clipboard_clear()
+            selected_text = self.text_field.get(tk.SEL_FIRST, tk.SEL_LAST)
+            self.clipboard_append(selected_text)
+        except tk.TclError:
+            pass
+    
+    def paste_text(self):
+        try:
+            clipboard_text = self.clipboard.get()
+            self.text_field.insert(tk.INSERT, clipboard_text)
+        except tk.TclError:
+            pass
 
     def encode_utf8(self):
         content = self.text_field.get(1.0, tk.END)
