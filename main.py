@@ -477,27 +477,6 @@ class EtcherExplorerAPP(tk.Tk):
         ]
         messagebox.showinfo("Keyboard Shortcuts", "\n".join(shortcuts))
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     def open_microsoft_account_security(self):
         url = "https://account.microsoft.com/security"
         webbrowser.open(url)
@@ -506,8 +485,7 @@ class EtcherExplorerAPP(tk.Tk):
         url = "https://myaccount.google.com/security"
         webbrowser.open(url)
 
-   
-    def open_ide(self, command):
+   def open_ide(self, command):
         subprocess.Popen([command])
     
     def open_vscode(self):
