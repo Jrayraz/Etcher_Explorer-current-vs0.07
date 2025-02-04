@@ -21,13 +21,13 @@ Etcher Explorer is a comprehensive tool for managing files, directories, and var
 
 ## Setup
 # There are several dependencies for this project starting with apt packages:
-sudo apt-get install pipenv python3-full python3-dev genisoimage ffmpeg ifupdown build-essential libssl-dev libffi-dev snapd cpufrequtils isc-dhcp-client dolphin ubuntu-drivers-common spyder nuitka libxcb-cursor0 pcscd gnome-screenshot xtarfile[zstd]
+sudo apt-get install pipenv python3-full python3-dev genisoimage ffmpeg ifupdown build-essential libssl-dev libffi-dev snapd cpufrequtils isc-dhcp-client dolphin ubuntu-drivers-common spyder nuitka libxcb-cursor0 pcscd gnome-screenshot smartmontools
 
 # Snap dependencies
 sudo snap install alacritty --classic
 
 # Environment dependencies
-pipenv install PySide6 tk logging cryptography psutil py7zr screeninfo pydub pillow opencv-python-headless requests webbrowser beautifulsoup4 nuitka ffpyplayer
+pipenv install PySide6 tk logging cryptography psutil py7zr screeninfo pydub pillow opencv-python-headless requests webbrowser beautifulsoup4 nuitka ffpyplayer xtarfile[zstd] pyinstaller matplotlib
 
 # Github (Used for scanning for malware)
 cd /program/dir
@@ -41,9 +41,4 @@ sudo ubuntu-drivers autoinstall
 pipenv run python3 main.py
 
 # If desired you can create a .desktop file for ease-of-access to the program
-# If you have a security key, for example a Yubico security key you can install the interface for your security key, such as the Yubico Authenticator, from the security key manufactorers website.Then move the directory of the security key's interface to your project directory and rename the directory "SecKey" to enable the "Security Key Interface" button. If you do not have a security key with a GUI interface to manage the security key as the SecKey directory in your project directory then the "Security Key Interface" button will be broken
-
-# PLEASE keep in mind this project is in development, and I am open to any contributions to the project. However, do not get upset if some features do not work as intended. If dependencies are correctly configured, and you have the Yubico Security Key and Yubico Authenticator all features should work, but no promises Etcher Explorer is still under development and undergoing constant change so some features may currently be broke. If so, email me at: jonathan.rosenbum@shitzoid-software.com and I will do my best to work with you to resolve any issues.
-
-# If you use the "Metadata" feature of photo_editor.py, and see information in the metadata of a photo you do not want in the metadata, I suggest the exifcleaner software found on github for removing metadata of a photo; available at:
-https://github.com/szTheory/exifcleaner/releases/latest
+# If you wish to enable the "Security Key Interface" then download your security key device software and run command: "mv /dir/of/seckey/software /dir/of/etcher_explorer/SecKey". Once the directory of your security keys software including the GUI has been moved to the main.py file's root directory. Then rename the subdirectory created in the programs root directory to "SecKey"; then the "Security Key Interface" button will be fully-functional, as long as your security key software includes an interactive GUI. If you do not have a security key, no security key software, or do not wish to incorporate your security key into the project then disregard the "Security Key Interface" button, or comment the snippet's creating the button out. 

@@ -112,7 +112,8 @@ class EtcherExplorerAPP(tk.Tk):
         self.copy_btn = tk.Button(self.top_right_frame, text="Copy", width=15, command=self.copy_text)
         self.paste_btn = tk.Button(self.top_right_frame, text="Paste", width=15, command=self.paste_text)
         self.man_key_btn = tk.Button(self.top_right_frame, text="Keys", width=15, command=self.open_shortcut_customizer)
-
+        self.man_stor_btn = tk.Button(self.top_right_frame, text="Manage Storage", width=32, command=lambda: self.open_new_terminal('pipenv run python3 manage_storage.py'))
+        
         self.open_button.grid(row=0, column=0, padx=5, pady=5)
         self.save_button.grid(row=0, column=1, padx=5, pady=5)
         self.undo_button.grid(row=1, column=0, padx=5, pady=5)
@@ -122,6 +123,7 @@ class EtcherExplorerAPP(tk.Tk):
         self.copy_btn.grid(row=3, column=1, padx=5, pady=5)
         self.paste_btn.grid(row=4, column=0, padx=5, pady=5)
         self.man_key_btn.grid(row=4, column=1, padx=5, pady=5)
+        self.man_stor_btn.grid(row=5, column=0, columnspan=2, padx=5, pady=5)
 
     def create_combined_bottom_buttons(self):
         self.github = tk.Button(self.bottom_frame, text="Launch GitHub Interface", width=20, command=lambda: self.open_new_terminal('pipenv run python3 github_button.py'))
@@ -171,6 +173,27 @@ class EtcherExplorerAPP(tk.Tk):
         if not os.path.exists(self.shortcut_file):
             self.create_default_shortcuts()
 
+    def create_context_menu(self, widget):
+        # Create a menu
+        menu = Menu(widget, tearoff=0)
+        menu.add_command(label="Copy", command=lambda: widget.event_generate("<<Copy>>"))
+        menu.add_command(label="Paste", command=lambda: widget.event_generate("<<Paste>>"))
+        menu.add_command(label="Undo", command=lambda: widget.event_generate("<<Undo>>"))
+        menu.add_command(label="Redo", command=lambda: widget.event_generate("<<Redo>>"))
+        menu.add_separator()
+        menu.add_command(label="Open in VSCode", command=self.open_in_vscode)
+        menu.add_command(label="Open Log Viewer", command=self.launch_log_viewer)
+        menu.add_separator()
+        menu.add_command(label="Load Key", command=self.load_key)
+        menu.add_command(label="Krypt_Data", command=self.krypt_data)
+        menu.add_command(label="DeKrypt Data", command=self.dekrypt_data)
+        
+
+        def show_menu(event):
+            menu.tk_popup(event.x_root, event.y_root)
+
+        widget.bind("<Button-3>", show_menu)
+
     def create_text_field(self):
         self.text_field = ScrolledText(self.top_center_frame, wrap='word', undo=True)
         self.text_field.pack(expand=True, fill='both')
@@ -180,9 +203,10 @@ class EtcherExplorerAPP(tk.Tk):
         self.text_field.bind("<Control-c>", lambda _: self.text_field.event_generate("<<Copy>>"))
         self.text_field.bind("<Control-v>", lambda _: self.text_field.event_generate("<<Paste>>"))
         self.text_field.bind("<Control-x>", lambda _: self.text_field.event_generate("<<Cut>>"))
+        self.create_context_menu(self.text_field)
 
     def on_text_modified(self, event=None):
-        self.text_field.edit_seperator()
+        self.text_field.edit_separator()
         self.text_field.edit_modified(False)
 
     def open_file(self):
@@ -269,8 +293,6 @@ class EtcherExplorerAPP(tk.Tk):
         for key, command in shortcuts.items():
             self.bind_all(key, command)
 
-
-
     def inspect_system(self):
         return os.getlogin()
 
@@ -301,20 +323,21 @@ class EtcherExplorerAPP(tk.Tk):
 
     def open_new_terminal(self, command):
         try:
-            subprocess.Popen(['alacritty', '-e', 'bash', '-c', command])
+            subprocess.Popen(['alacritty', '-e', 'bash', '-c', f"{command}; exec bash"])
+
         except Exception as e:
             messagebox.showinfo("Error", f"Error opening terminal: {e}")
             logging.error(f"Error opening terminal: {e}")
 
     def create_menus(self):
         file_menu = Menu(self.menu_bar, tearoff=0)
-        file_menu.add_command(label="Create File", command=lambda: self.create_file(0))
+      #  file_menu.add_command(label="Create File", command=lambda: self.create_file(0))
         file_menu.add_command(label="Open", command=self.open_file)
         file_menu.add_command(label="Save", command=self.save_file)
       # file_menu.add_command(label="Paste Data", command=self.paste_file)
-        file_menu.add_command(label="Delete Data", command=self.delete_file)
+      #  file_menu.add_command(label="Delete Data", command=self.delete_file)
         file_menu.add_command(label="SecureDelete", command=self.secure_delete)
-        file_menu.add_command(label="Remix", command=self.rename_file)
+       # file_menu.add_command(label="Remix", command=self.rename_file)
         file_menu.add_command(label="Open Directory", command=self.open_directory)
         self.menu_bar.add_cascade(label="File", menu=file_menu)
 
@@ -363,6 +386,7 @@ class EtcherExplorerAPP(tk.Tk):
         compile_menu.add_command(label="Compile Java Program", command=self.compile_program)
         compile_menu.add_command(label="Compile Go Program", command=self.compile_program)
         compile_menu.add_command(label="Compile Rust Program", command=self.compile_program)
+        compile_menu.add_command(label="Compile Directory", command=self.compile_directory)
         self.menu_bar.add_cascade(label="Compile", menu=compile_menu)
 
         edit_menu = Menu(self.menu_bar, tearoff=0)
@@ -485,7 +509,8 @@ class EtcherExplorerAPP(tk.Tk):
         url = "https://myaccount.google.com/security"
         webbrowser.open(url)
 
-   def open_ide(self, command):
+   
+    def open_ide(self, command):
         subprocess.Popen([command])
     
     def open_vscode(self):
@@ -509,6 +534,7 @@ class EtcherExplorerAPP(tk.Tk):
 
     def open_seckey(self):
         try:
+	    # Use directory security key authenticator is located in
             subprocess.Popen(['bash', '-c', 'cd ~/Etcher_Explorer/SecKey && ./authenticator'])
         except Exception as e:
             messagebox.showinfo("Error", f"Error opening terminal: {e}")
@@ -528,6 +554,23 @@ class EtcherExplorerAPP(tk.Tk):
             self.text_field.insert(tk.INSERT, clipboard_text)
         except tk.TclError:
             pass
+
+    def secure_delete(file_path):
+        """Overwrite the content of the file with zeros and delete the file."""
+        try:
+            # Get the size of the file
+            file_size = os.path.getsize(file_path)
+
+            # Open the file in write mode
+            with open(file_path, 'wb') as file:
+                # Overwrite the file with zeros
+                file.write(b'\x00' * file_size)
+
+            # Remove the file
+            os.remove(file_path)
+            messagebox.showinfo("INFO",f"Securely deleted {file_path}")
+        except Exception as e:
+            messagebox.showinfo("INFO:", f"Failed to securely delete {file_path}: {e}")
 
     def encode_utf8(self):
         content = self.text_field.get(1.0, tk.END)
@@ -626,6 +669,38 @@ class EtcherExplorerAPP(tk.Tk):
         desktop_entry_path = os.path.join(os.path.expanduser("~/.local/share/applications"), f"{os.path.basename(exec_path)}.desktop")
         with open(desktop_entry_path, 'w') as f:
             f.write(desktop_entry)
+       
+    def compile_directory(self):
+        directory = filedialog.askdirectory(title="Select Directory to Compile")
+        if directory:
+            self.compile_all(directory)
+
+    def compile_all(self, directory):
+        # Find all .py files in the directory
+        py_files = []
+        for root, dirs, files in os.walk(directory):
+            for file in files:
+                if file.endswith(".py"):
+                    py_files.append(os.path.join(root, file))
+
+        if not py_files:
+            messagebox.showwarning("No Python Files", "No .py files found in the selected directory.")
+            return
+
+        # Compile each Python file with Nuitka
+        for py_file in py_files:
+            try:
+                output_file = os.path.join(directory, 'compiled_output')
+                compile_command = f"python -m nuitka --follow-imports --output-dir={output_file} {py_file}"
+                self.open_terminal(compile_command)
+                print(f"Compiled {py_file} successfully!")
+            except subprocess.CalledProcessError as e:
+                print(f"Failed to compile {py_file}: {e}")
+
+    def open_terminal(self, command):
+        subprocess.Popen(['alacritty', '-e', 'bash', '-c', f"{command}; exec bash"])
+
+
 
     def handle_input(self, prompt_dialog, input_var, process_stdin):
         user_input = input_var.get()
@@ -636,6 +711,7 @@ class EtcherExplorerAPP(tk.Tk):
     def send_input_to_subprocess(self, process_stdin, user_input):
         process_stdin.write(user_input + '\n')
         process_stdin.flush()
+   
     def launch_system_monitor(self):
         subprocess.call(['gnome-system-monitor'])
 
@@ -711,11 +787,18 @@ class EtcherExplorerAPP(tk.Tk):
         close_button.pack(side='right', padx=5, pady=5)
 
         try:
-            with open('etched.log', 'r') as log_file:
-                log_entries = log_file.readlines()
-                log_entries.reverse()
-                for entry in log_entries:
-                    self.text_area.insert(tk.END, entry)
+            log_file_path = filedialog.askopenfilename(
+                title="Select Log File",
+                filetypes=[("Log Files", "*.log"), ("All Files", "*.*")]
+            )
+            if log_file_path:
+                with open(log_file_path, 'r') as log_file:
+                    log_entries =  log_file.readlines()
+                    log_entries.reverse()
+                    for entry in log_entries:
+                        self.text_area.insert(tk.END, entry)
+            else:
+                messagebox.showinfo("Error", "No Log File Selected")
         except FileNotFoundError:
             messagebox.showinfo("Error", "Log File Not Found")
 
@@ -1969,9 +2052,13 @@ class EtcherExplorerAPP(tk.Tk):
             """,
             "KryptLock Help/Doc": """
                 KryptLock is a tool for encrypting and decrypting files and directories.
+		Once a file has been encrypted it is given a .krypt file extension, 
+		and is not able to be viewed in plain-text again. 
+		Not until the "dekrypt_data" method is called against the file
+ 		with the key that encrypted it loaded into the system. 
                 Setup Tips:
                 - Ensure you have the cryptography library installed.
-                - Use a strong key for encryption.
+                - Ensure you use a strong password and keep it secure.
                 Configuration:
                 - Customize the encryption settings and key management in the script.
             """,
@@ -2064,3 +2151,10 @@ def main():
         raise
 if __name__ == "__main__":
     main()
+
+
+
+
+
+
+

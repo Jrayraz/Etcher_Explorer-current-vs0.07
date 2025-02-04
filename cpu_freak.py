@@ -9,7 +9,7 @@ class CPUFreakControl:
         self.master = master
         self.root = tk.Toplevel(master)
         self.root.title("CPU Freak Control")
-        self.root.geometry("325x325")  # Adjusted the window size to fit all elements
+        self.root.geometry("325x555")  # Adjusted the window size to fit all elements
 
         # Use grid for the main label
         label = tk.Label(self.root, text="CPU Freak Control Interface")
@@ -148,4 +148,5 @@ if __name__ == "__main__":
     master.withdraw()  # Hide the main window
     app = CPUFreakControl(master)  # Initialize the CPUFreakControl with master
     master.mainloop()
+
 

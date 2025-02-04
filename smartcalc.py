@@ -46,11 +46,16 @@ class SmartCalc(QWidget):
             ('0', 4, 0), ('.', 4, 1), ('=', 4, 2), ('+', 4, 3),
             ('(', 5, 0), (')', 5, 1), ('^', 5, 2), ('sqrt', 5, 3),
             ('sin', 6, 0), ('cos', 6, 1), ('tan', 6, 2), ('log', 6, 3),
-            ('C', 7, 0, 1, 4)
+            ('C', 7, 0, 1, 2), ('CE', 7, 2, 1, 2)
         ]
 
-        for btn_text, row, col, rowspan, colspan in [(btn[0], btn[1], btn[2], 1, 1) if len(btn) == 3 else btn for btn in buttons]:
-            button = QPushButton(btn_text, self)
+        for btn in buttons:
+            if len(btn) == 3:
+                text, row, col = btn
+                rowspan, colspan = 1, 1
+            else:
+                text, row, col, rowspan, colspan = btn
+            button = QPushButton(text, self)
             button.setFont(QFont("Arial", 14))
             button.clicked.connect(self.on_button_click)
             buttons_layout.addWidget(button, row, col, rowspan, colspan)
@@ -72,6 +77,8 @@ class SmartCalc(QWidget):
             self.calculate_result()
         elif text == 'C':
             self.input_field.clear()
+        elif text == 'CE':
+            self.clear_last_entry()
         elif text == 'sqrt':
             self.input_field.setText(self.input_field.text() + '**0.5')
         elif text in ('sin', 'cos', 'tan', 'log'):
@@ -79,20 +86,26 @@ class SmartCalc(QWidget):
         else:
             self.input_field.setText(self.input_field.text() + text)
 
+    def clear_last_entry(self):
+        current_text = self.input_field.text()
+        self.input_field.setText(current_text[:-1])
+
     def calculate_result(self):
         try:
-            equation = self.input_field.text()  # Correct the way input_field is referenced
-            result = eval(equation)  # Evaluate the equation
+            equation = self.input_field.text()
+            result = eval(equation)
             self.result_label.setText(f"Result: {result}")
 
-            google_result = self.get_google_result(equation)  # Get Google result
+            google_result = self.get_google_result(equation)
             self.google_result_label.setText(f"Google Result: {google_result}")
 
-            if str(result) == google_result:
-                self.certainty_label.setText("Certainty: 100%")
-            elif abs(float(result) - float(google_result)) < 1e-10:
-                self.certainty_label.setText("Certainty: High")
-            else:
+            try:
+                google_result_float = float(google_result)
+                if abs(result - google_result_float) < 1e-10:
+                    self.certainty_label.setText("Certainty: High")
+                else:
+                    self.certainty_label.setText("Certainty: Low")
+            except ValueError:
                 self.certainty_label.setText("Certainty: Low")
         except Exception as e:
             self.result_label.setText(f"Error: {e}")
@@ -106,13 +119,24 @@ class SmartCalc(QWidget):
         result = None
 
         try:
-            result = soup.find('span', {'class': 'qv3Wpe'}.text), 'html_parser'
+            # Try to find the result in different possible elements
+            result = soup.find('span', {'class': 'qv3Wpe'}).text
         except AttributeError:
             try:
-                result = soup.find('div', {'class': 'BNeawe iBp4i AP7Wnd'}.text), 'html_parser'
+                result = soup.find('div', {'class': 'BNeawe iBp4i AP7Wnd'}).text
             except AttributeError:
-                result = "Error: Could not retrieve the result"
-        return result
+                try:
+                    result = soup.find('div', {'class': 'BNeawe s3v9rd AP7Wnd'}).text
+                except AttributeError:
+                    result = "Could not retrieve the result"
+
+        # Convert the result to a numeric value if possible
+        try:
+            numeric_result = float(result.replace(',', ''))
+        except ValueError:
+            numeric_result = result
+
+        return numeric_result
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)

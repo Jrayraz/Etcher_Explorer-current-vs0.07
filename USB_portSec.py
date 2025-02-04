@@ -77,7 +77,7 @@ class USBPortSecurity:
             selected_ports = self.get_selected_ports()
             for port in selected_ports:
                 subprocess.run(["sudo", "udevadm", "control", "--stop-exec-queue"], check=True)
-                subprocess.run(["sudo", "udevadm", "trigger", f"--subsystem-match=usb --action=remove"], check=True)
+                subprocess.run(["sudo", "udevadm", "trigger", "--subsystem-match=usb", "--action=remove"], check=True)
             logging.info("Selected USB ports locked successfully.")
             messagebox.showinfo("Success", "Selected USB ports have been locked successfully.")
         except Exception as e:
@@ -171,16 +171,18 @@ class USBPortSecurity:
 
     def lock_selected_port(self, port):
         try:
-            # Confirm the port exists before attempting to lock
-            plugged_in_devices = subprocess.check_output("lsusb").decode().splitlines()
-            if port not in [device.split()[5] for device in plugged_in_devices]:
-                raise ValueError(f"USB port {port} does not exist or is not currently plugged in.")
+           device_id = port.split()[5]
 
-            subprocess.run(["sudo", "udevadm", "control", "--stop-exec-queue"], check=True)
-            subprocess.run(["sudo", "udevadm", "trigger", f"--subsystem-match=usb --action=remove"], check=True)
-            
-            logging.info(f"USB port {port} locked successfully.")
-            messagebox.showinfo("Success", f"USB port {port} has been locked successfully.")
+           # Confirm the port exists before attempting to block
+           plugged_in_devices = subprocess.check_output("lsusb").decode().splitlines()
+           if device_id not in [device.split()[5] for device in plugged_in_devices]:
+               raise ValueError(f"USB Port {port} does not exist or is not currently plugged in.")
+           
+           subprocess.run(["sudo", "udevadm", "control", "--stop-exec-queue"], check=True)
+           subprocess.run(["sudo", "udevadm", "trigger", f"subsystem-match=usb --action=remove"], check=True)
+
+           logging.info(f"USB port {port} locked successfully.")
+           messagebox.showinfo("Success", f"USB port {port} locked successfully.")
         except subprocess.CalledProcessError as e:
             logging.error(f"Subprocess error locking USB port {port}", exc_info=True)
             messagebox.showerror("Error", f"Failed to lock USB port {port}: {e}")
@@ -188,11 +190,34 @@ class USBPortSecurity:
             logging.error(f"Error locking USB port {port}", exc_info=True)
             messagebox.showerror("Error", f"Failed to lock USB port {port}: {e}")
 
+           
+           #vs0.01 
+           # Confirm the port exists before attempting to lock
+#       try:
+#            plugged_in_devices = subprocess.check_output("lsusb").decode().splitlines()
+ #           if port not in [device.split()[5] for device in plugged_in_devices]:
+  #              raise ValueError(f"USB port {port} does not exist or is not currently plugged in.")
+#
+   #         subprocess.run(["sudo", "udevadm", "control", "--stop-exec-queue"], check=True)
+    #        subprocess.run(["sudo", "udevadm", "trigger", f"--subsystem-match=usb --action=remove"], check=True)
+     #       
+      #      logging.info(f"USB port {port} locked successfully.")
+ #           messagebox.showinfo("Success", f"USB port {port} has been locked successfully.")
+  #      except subprocess.CalledProcessError as e:
+   #         logging.error(f"Subprocess error locking USB port {port}", exc_info=True)
+    #        messagebox.showerror("Error", f"Failed to lock USB port {port}: {e}")
+     #   except Exception as e:
+      #      logging.error(f"Error locking USB port {port}", exc_info=True)
+       #     messagebox.showerror("Error", f"Failed to lock USB port {port}: {e}")
+
     def unlock_selected_port(self, port):
         try:
+            # Extract the device ID from the port description
+            device_id = port.split()[5]
+
             # Confirm the port exists before attempting to unlock
             plugged_in_devices = subprocess.check_output("lsusb").decode().splitlines()
-            if port not in [device.split()[5] for device in plugged_in_devices]:
+            if device_id not in [device.split()[5] for device in plugged_in_devices]:
                 raise ValueError(f"USB port {port} does not exist or is not currently plugged in.")
 
             subprocess.run(["sudo", "udevadm", "control", "--start-exec-queue"], check=True)
@@ -269,3 +294,4 @@ usb_port_sec.refresh_info()
 root.after(5000, usb_port_sec.refresh_info)
 
 root.mainloop()
+
