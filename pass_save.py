@@ -10,6 +10,9 @@ import base64
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 from cryptography.hazmat.backends import default_backend
+import psutil
+import signal
+
 
 # Enable GPU acceleration
 os.environ["QT_OPENGL"] = "angle"
@@ -436,8 +439,13 @@ class PassSave(QMainWindow):
         self.refreshAccountWidgets()
 
     def closeEvent(self, event):
+        super().closeEvent(event)
         self.krypt_directory(self.secrets_dir)
         event.accept()
+        # Find the parent terminal process and terminate it
+        parent_pid = psutil.Process(os.getpid()).ppid()
+        os.kill(parent_pid, signal.SIGTERM)
+        self.destroy()
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)

@@ -5,6 +5,8 @@ from bs4 import BeautifulSoup
 from PySide6.QtWidgets import QApplication, QWidget, QVBoxLayout, QLineEdit, QPushButton, QLabel, QGridLayout
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QFont
+import psutil
+import signal
 
 # Enable GPU acceleration
 os.environ["QT_OPENGL"] = "angle"
@@ -137,7 +139,14 @@ class SmartCalc(QWidget):
             numeric_result = result
 
         return numeric_result
-
+        
+    def on_closing(self):
+        # Terminate the parent terminal process
+        parent_pid = psutil.Process(os.getpid()).ppid()
+        os.kill(parent_pid, signal.SIGTERM)
+        # Close the Tkinter window
+        self.destroy()
+        
 if __name__ == "__main__":
     app = QApplication(sys.argv)
     calc = SmartCalc()

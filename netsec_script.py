@@ -1,51 +1,70 @@
 import sys
+import os
+import hashlib
 import platform
 import subprocess
-import hashlib
-import os
 import requests
-from PySide6.QtWidgets import QApplication, QVBoxLayout, QHBoxLayout, QPushButton, QLabel, QWidget, QFileDialog, QDialog, QMessageBox, QTextEdit, QTableWidget, QTableWidgetItem, QLineEdit, QInputDialog
-from PySide6.QtNetwork import QNetworkInterface, QHostAddress
-
-# Enable GPU acceleration
-os.environ["QT_OPENGL"] = "angle"
+from PySide6.QtWidgets import (
+    QWidget, QVBoxLayout, QPushButton, QFileDialog, QTableWidget,
+    QTableWidgetItem, QMessageBox, QDialog, QTextEdit, QInputDialog,
+    QApplication
+)
+from PySide6.QtNetwork import QNetworkInterface
+from PySide6.QtCore import QEvent
+from PySide6.QtGui import QColor, QPalette
 
 class NetSec(QWidget):
     def __init__(self):
         super().__init__()
+        self.create_gui()  # Fix: Call the create_gui method
 
-        self.setWindowTitle("NetSec Security Features")
-        self.setGeometry(100, 100, 400, 300)  # Set the window size
-
+    def create_gui(self):
         layout = QVBoxLayout()
+        self.setWindowTitle("NetSec Security Features")
+        self.setGeometry(100, 100, 400, 300)
+
+        # Set background color and button styles
+        palette = self.palette()
+        palette.setColor(QPalette.Window, QColor('lightblue'))
+        self.setPalette(palette)
+
+        button_palette = self.palette()
+        button_palette.setColor(QPalette.Button, QColor('orange'))
+        button_palette.setColor(QPalette.ButtonText, QColor('black'))
 
         # Buttons
         self.check_file_hash_btn = QPushButton("Check File Hash")
         self.check_dir_hashes_btn = QPushButton("Check Directory Hashes")
         self.ip_config_btn = QPushButton("IP Configuration")
-        self.mac_lookup_btn = QPushButton("MAC Address Lookup")  # New MAC Address Lookup button
+        self.mac_lookup_btn = QPushButton("MAC Address Lookup")
 
         # Set fixed width for buttons to fit text comfortably
-        self.check_file_hash_btn.setFixedWidth(200)
-        self.check_dir_hashes_btn.setFixedWidth(200)
-        self.ip_config_btn.setFixedWidth(200)
-        self.mac_lookup_btn.setFixedWidth(200)
+        self.check_file_hash_btn.setFixedWidth(400)
+        self.check_dir_hashes_btn.setFixedWidth(400)
+        self.ip_config_btn.setFixedWidth(400)
+        self.mac_lookup_btn.setFixedWidth(400)
+
+        # Apply button palette
+        self.check_file_hash_btn.setPalette(button_palette)
+        self.check_dir_hashes_btn.setPalette(button_palette)
+        self.ip_config_btn.setPalette(button_palette)
+        self.mac_lookup_btn.setPalette(button_palette)
 
         layout.addWidget(self.check_file_hash_btn)
         layout.addWidget(self.check_dir_hashes_btn)
         layout.addWidget(self.ip_config_btn)
-        layout.addWidget(self.mac_lookup_btn)  # Add the new button to the layout
+        layout.addWidget(self.mac_lookup_btn)
 
         self.setLayout(layout)
 
         self.check_file_hash_btn.clicked.connect(self.check_file_hash)
         self.check_dir_hashes_btn.clicked.connect(self.check_dir_hashes)
         self.ip_config_btn.clicked.connect(self.show_ip_config)
-        self.mac_lookup_btn.clicked.connect(self.mac_address_lookup)  # Connect the new button to the lookup method
+        self.mac_lookup_btn.clicked.connect(self.mac_address_lookup)
 
     def closeEvent(self, event):
         self.hide()
-        event.ignore()  # Prevents the parent application from closing
+        event.ignore()
 
     def calculate_hash(self, filepath):
         hash_func = hashlib.sha256()
@@ -60,10 +79,10 @@ class NetSec(QWidget):
         for root, _, files in os.walk(base_dir):
             for file in files:
                 filepath = os.path.join(root, file)
-                with open(filepath, 'rb') as f:  # Open file in binary mode
+                with open(filepath, 'rb') as f:
                     try:
                         for line in f:
-                            line = line.decode('latin-1').strip()  # Decode using 'latin-1' encoding
+                            line = line.decode('latin-1').strip()
                             malware_hashes.add(line)
                     except UnicodeDecodeError:
                         self.show_message("Error", f"Could not decode file: {filepath}")
@@ -101,7 +120,7 @@ class NetSec(QWidget):
     def show_dir_hash_results(self, results):
         dialog = QDialog(self)
         dialog.setWindowTitle("Directory Hash Results")
-        dialog.setGeometry(100, 100, 600, 400)  # Adjusted size for more compact display
+        dialog.setGeometry(100, 100, 600, 400)
 
         layout = QVBoxLayout()
 
@@ -143,7 +162,7 @@ class NetSec(QWidget):
 
         dialog = QDialog(self)
         dialog.setWindowTitle("IP Configuration")
-        dialog.setGeometry(100, 100, 400, 300)  # Adjusted size for more compact display
+        dialog.setGeometry(100, 100, 400, 300)
 
         vbox = QVBoxLayout()
 
@@ -233,10 +252,18 @@ class NetSec(QWidget):
         dialog.setLayout(vbox)
 
         dialog.exec()
-
-
+        
+    def on_closing(self):
+        # Terminate the parent terminal process
+        parent_pid = psutil.Process(os.getpid()).ppid()
+        os.kill(parent_pid, signal.SIGTERM)
+        # Close the Tkinter window
+        self.destroy()
+        
 if __name__ == "__main__":
     app = QApplication(sys.argv)
     win = NetSec()
     win.show()
-    app.exec()
+    sys.exit(app.exec())
+
+
