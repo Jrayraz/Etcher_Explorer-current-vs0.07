@@ -10,14 +10,22 @@ from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.backends import default_backend
 from cryptography.fernet import Fernet
 import base64
+import signal
 
 # Set up logging
 logging.basicConfig(filename='usb_portsec.log', level=logging.ERROR,
                     format='%(asctime)s:%(levelname)s:%(message)s')
 
 class USBPortSecurity:
-    def __init__(self):
+    def __init__(self, root):
         self.key = None
+        self.root = root(tk.Tk)
+        self.root.geometry('350x510')
+        self.root.configure(bg='lightblue')
+        self.root.option_add('*Button.Background', 'orange')
+        self.root.option_add('*Button.Foreground', 'black')
+        self.root.option_add('*Frame.Background', 'lightblue')
+        self.root.option_add('*Frame.Foreground', 'white')
 
     def load_key(self):
         file_path = filedialog.askopenfilename(title="Select Key File", filetypes=(("Key Files", "*.key"), ("All Files", "*.*")))
@@ -232,6 +240,13 @@ class USBPortSecurity:
             logging.error(f"Error unlocking USB port {port}", exc_info=True)
             messagebox.showerror("Error", f"Failed to unlock USB port {port}: {e}")
 
+    def on_closing(self):
+        # Terminate the parent terminal process
+        parent_pid = psutil.Process(os.getpid()).ppid()
+        os.kill(parent_pid, signal.SIGTERM)
+        # Close the Tkinter window
+        self.destroy()
+
 # Create tkinter GUI
 root = tk.Tk()
 root.title("USB Port Security")
@@ -294,4 +309,5 @@ usb_port_sec.refresh_info()
 root.after(5000, usb_port_sec.refresh_info)
 
 root.mainloop()
+
 

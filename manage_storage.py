@@ -3,6 +3,9 @@ from tkinter import ttk, messagebox, filedialog, simpledialog
 import subprocess
 import psutil
 import shutil
+import os
+import signal
+
 
 class StorageManagerApp:
     def __init__(self, root):
@@ -307,6 +310,13 @@ class StorageManagerApp:
         drives = self.get_available_drives()
         for drive in drives:
             self.drive_listbox.insert(tk.END, drive)
+
+    def on_closing(self):
+        # Terminate the parent terminal process
+        parent_pid = psutil.Process(os.getpid()).ppid()
+        os.kill(parent_pid, signal.SIGTERM)
+        # Close the Tkinter window
+        self.destroy()
 
 if __name__ == "__main__":
     root = tk.Tk()

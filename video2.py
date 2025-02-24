@@ -4,6 +4,9 @@ from ffpyplayer.player import MediaPlayer
 from PIL import Image, ImageTk
 import threading
 import time
+import os
+import psutil
+import signal
 
 class VideoPlayer:
     def __init__(self, root):
@@ -194,6 +197,14 @@ class VideoPlayer:
     def exit_app(self):
         self.stop_video()
         self.root.quit()
+        self.on_closing()
+        
+    def on_closing(self):
+        # Terminate the parent terminal process
+        parent_pid = psutil.Process(os.getpid()).ppid()
+        os.kill(parent_pid, signal.SIGTERM)
+        # Close the Tkinter window
+        self.destroy()
 
 if __name__ == "__main__":
     root = tk.Tk()

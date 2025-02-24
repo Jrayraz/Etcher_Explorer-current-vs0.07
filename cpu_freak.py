@@ -3,6 +3,9 @@ import multiprocessing
 import subprocess
 import tkinter as tk
 from tkinter import messagebox
+import psutil
+import signal
+
 
 class CPUFreakControl:
     def __init__(self, master):
@@ -142,6 +145,13 @@ class CPUFreakControl:
     def kill_program(self):
         os.system(f"sudo cpufreq-set -r -g {self.original_governor}")
         self.root.destroy()
+
+    def on_closing(self):
+        # Terminate the parent terminal process
+        parent_pid = psutil.Process(os.getpid()).ppid()
+        os.kill(parent_pid, signal.SIGTERM)
+        # Close the Tkinter window
+        self.destroy()
 
 if __name__ == "__main__":
     master = tk.Tk()  # Create the master Tk instance
