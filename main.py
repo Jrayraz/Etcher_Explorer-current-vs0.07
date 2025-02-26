@@ -1,5 +1,6 @@
 import tkinter as tk
-from tkinter import filedialog, messagebox, simpledialog, Menu, Toplevel, Frame, Label, Listbox, Button, Scrollbar, Text, Canvas
+from tkinter.constants import LEFT, RIGHT
+from tkinter import filedialog, messagebox, simpledialog, Menu, Toplevel, Frame, Label, Listbox, Button, Scrollbar, Text, Canvas, StringVar, Entry
 from tkinter import ttk
 from tkinter.scrolledtext import ScrolledText
 from datetime import datetime
@@ -24,6 +25,9 @@ import matplotlib
 import random
 import string
 import json
+import tarfile
+import zipfile
+import time
 
 # Set up logging
 logging.basicConfig(filename='etched.log', level=logging.DEBUG, 
@@ -50,6 +54,12 @@ class EtcherExplorerAPP(tk.Tk):
         self.create_frames()
         self.create_menus()
         self.create_text_field()
+        self.configure(bg='lightblue')
+        self.option_add('*Button.Background', 'orange')
+        self.option_add('*Button.Foreground', 'black')
+        self.option_add('*Button.Text', 'yellow')
+        
+        self.apply_background_color(self)
         self.setup_logging()
         self.shortcut_file = "shortcuts.json"
         self.check_and_create_shortcuts_file()
@@ -69,10 +79,10 @@ class EtcherExplorerAPP(tk.Tk):
         logging.info("Logging is set up.")       
 
     def create_frames(self):
-        self.top_left_frame = tk.Frame(self, bg="light grey")
+        self.top_left_frame = tk.Frame(self)
         self.top_left_frame.grid(row=0, column=0, rowspan=2, sticky="nsew")
 
-        self.top_center_frame = tk.Frame(self, bg="white")
+        self.top_center_frame = tk.Frame(self, bg="lemonchiffon")
         self.top_center_frame.grid(row=0, column=1, columnspan=2, sticky="nsew")
 
         self.top_right_frame = tk.Frame(self, bg="light grey")
@@ -100,74 +110,139 @@ class EtcherExplorerAPP(tk.Tk):
         self.tree = ttk.Treeview(self.top_left_frame)
         self.tree.pack(expand=True, fill='both')
         self.tree.bind("<Double-1>", self.on_tree_double_click)
+        style = ttk.Style()
+        style.configure("Treeview", bg="blue", fieldbackground="lightblue", foreground="black")
+        self.tree.configure(style="Treeview")
 
     def create_top_right_buttons(self):
         # Top right frame buttons
+        self.open_dir_button = tk.Button(self.top_right_frame, text="Open Directory", width=35, command=self.open_directory)
+      
         self.open_button = tk.Button(self.top_right_frame, text="Open", width=15, command=self.open_file)
         self.save_button = tk.Button(self.top_right_frame, text="Save", width=15, command=self.save_file)
         self.undo_button = tk.Button(self.top_right_frame, text="Undo", width=15, command=self.undo_text)
         self.redo_button = tk.Button(self.top_right_frame, text="Redo", width=15, command=self.redo_text)
-        self.open_dir_button = tk.Button(self.top_right_frame, text="Open Directory", width=32, command=self.open_directory)
-        self.comp_2 = tk.Button(self.top_right_frame, text="Diff", width=15, command=lambda: self.open_new_terminal('pipenv run python3 comp2.py'))
+      
+
+
+        self.man_stor_btn = tk.Button(self.top_right_frame, text="Manage Storage", width=35, command=lambda: self.open_new_terminal('DRI_PRIME=1 pipenv run python3 manage_storage.py'))
+
+        self.comp_2 = tk.Button(self.top_right_frame, text="Diff", width=15, command=lambda: self.open_new_terminal('DRI_PRIME=1 pipenv run python3 comp2.py'))
         self.copy_btn = tk.Button(self.top_right_frame, text="Copy", width=15, command=self.copy_text)
         self.paste_btn = tk.Button(self.top_right_frame, text="Paste", width=15, command=self.paste_text)
         self.man_key_btn = tk.Button(self.top_right_frame, text="Keys", width=15, command=self.open_shortcut_customizer)
-        self.man_stor_btn = tk.Button(self.top_right_frame, text="Manage Storage", width=32, command=lambda: self.open_new_terminal('pipenv run python3 manage_storage.py'))
+
+
+
+        self.algore_btn = tk.Button(self.top_right_frame, text="alGORErythmn", width=35, command=lambda: self.open_new_terminal('DRI_PRIME=1 pipenv run python3 AlGORErythm.py'))
+
+        self.text_btn = tk.Button(self.top_right_frame, text="Find TxT", width=15, command=self.open_search_window)
+        self.replace_btn = tk.Button(self.top_right_frame, text="Replace TxT", width=15, command=self.open_replace_window)
+        self.GPT_assistant = tk.Button(self.top_right_frame, text="GPT Assistant", width=15, command=self.open_GPT_assistant)
+        self.AI_website_geny = tk.Button(self.top_right_frame, text="Website Genie", width=15, command=self.open_AI_website_geny)
         
-        self.open_button.grid(row=0, column=0, padx=5, pady=5)
-        self.save_button.grid(row=0, column=1, padx=5, pady=5)
-        self.undo_button.grid(row=1, column=0, padx=5, pady=5)
-        self.redo_button.grid(row=1, column=1, padx=5, pady=5)
-        self.open_dir_button.grid(row=2, column=0, columnspan=2, padx=5, pady=5)
-        self.comp_2.grid(row=3, column=0, padx=5, pady=5)
-        self.copy_btn.grid(row=3, column=1, padx=5, pady=5)
-        self.paste_btn.grid(row=4, column=0, padx=5, pady=5)
-        self.man_key_btn.grid(row=4, column=1, padx=5, pady=5)
-        self.man_stor_btn.grid(row=5, column=0, columnspan=2, padx=5, pady=5)
+        self.thiscode_btn = tk.Button(self.top_right_frame, text="Snippets", width=15, command=self.open_this_code_works)
+        self.devdocs_btn = tk.Button(self.top_right_frame, text="PythonDocs", width=15, command=lambda: self.open_new_terminal('DRI_PRIME=1 pipenv run python3 search_python_devdoc.py'))
+
+        self.create_btn = tk.Button(self.top_right_frame, text="New File", width=35, command=self.create_document)
+
+        self.dict_btn = tk.Button(self.top_right_frame, text="Dictionary", width=15, command=lambda: self.open_new_terminal('DRI_PRIME=1 pipenv run python3 search_english_term.py'))
+        self.update_upgrade_btn = tk.Button(self.top_right_frame, text="Update/Upgrade", width=15, command=lambda: self.open_new_terminal('DRI_PRIME=1 sudo apt-get update || true && sudo apt-get upgrade -y || true'))
+        self.term_con_btn = tk.Button(self.top_right_frame, text="Terminal Console", width=35, command=lambda: self.open_new_terminal('DRI_PRIME=1 pipenv run python3 tcon.py'))
+        
+        self.pac_man_btn = tk.Button(self.top_right_frame, text="PacMan", width=15, command=lambda: self.open_new_terminal('DRI_PRIME=1 pipenv run python3 pacman.py'))
+        self.cor_ext_btn = tk.Button(self.top_right_frame, text="Corruption Termination", width=15, command=lambda: self.open_new_terminal('DRI_PRIME=1 pipenv run python3 corruption_exterm.py'))
+        self.colab_btn = tk.Button(self.top_right_frame, text="Colab", width=15, command=self.open_colabs)
+        
+        
+        self.open_dir_button.grid(row=1, column=0, columnspan=2, padx=5, pady=5)
+        
+
+        self.open_button.grid(row=2, column=0, padx=5, pady=5)
+        self.save_button.grid(row=2, column=1, padx=5, pady=5)
+        self.undo_button.grid(row=3, column=0, padx=5, pady=5)
+        self.redo_button.grid(row=3, column=1, padx=5, pady=5)
+        
+
+
+
+        self.man_stor_btn.grid(row=10, column=0, columnspan=2, padx=5, pady=5)
+        
+        self.comp_2.grid(row=5, column=0, padx=5, pady=5)
+        self.copy_btn.grid(row=5, column=1, padx=5, pady=5)
+        self.paste_btn.grid(row=6, column=0, padx=5, pady=5)
+        self.man_key_btn.grid(row=6, column=1, padx=5, pady=5)
+        
+        
+        
+        self.algore_btn.grid(row=7, column=0, columnspan=2, padx=5, pady=5)
+        
+        self.text_btn.grid(row=11, column=0, padx=5, pady=5)
+        self.replace_btn.grid(row=11, column=1, padx=5, pady=5)
+        self.GPT_assistant.grid(row=8, column=0, columnspan=1, padx=5, pady=5)
+        self.AI_website_geny.grid(row=8, column=1, columnspan=1, padx=5, pady=5)
+
+        self.create_btn.grid(row=4, column=0, columnspan=2, padx=5, pady=5)
+        
+        self.thiscode_btn.grid(row=9, column=0, columnspan=1, padx=5, pady=5)
+        self.devdocs_btn.grid(row=9, column=1, columnspan=1, padx=5, pady=5)
+        self.dict_btn.grid(row=12, column=1, columnspan=1, padx=5, pady=5)       
+        self.update_upgrade_btn.grid(row=12, column=0, columnspan=1, padx=5, pady=5)
+
+        self.term_con_btn.grid(row=13, column=0, columnspan=2, padx=5, pady=5)
+        self.pac_man_btn.grid(row=14, column=0, columnspan=1, padx=5, pady=5)
+        self.cor_ext_btn.grid(row=14, column=1, columnspan=1, padx=5, pady=5)
+        self.colab_btn.grid(row=15, column=0, columnspan=1, padx=5, pady=5)
 
     def create_combined_bottom_buttons(self):
-        self.github = tk.Button(self.bottom_frame, text="Launch GitHub Interface", width=20, command=lambda: self.open_new_terminal('pipenv run python3 github_button.py'))
-        self.smartcalc = tk.Button(self.bottom_frame, text="Launch Smartcalc", width=20, command=lambda: self.open_new_terminal('pipenv run python3 smartcalc.py'))
-        self.chrome = tk.Button(self.bottom_frame, text="Launch Chrome", width=20, command=lambda: self.open_new_terminal('google-chrome-beta --enable-logging --vmodule=*gpu*=3'))
-        self.photo_editor = tk.Button(self.bottom_frame, text="Launch Photo Editor", width=20, command=lambda: self.open_new_terminal('pipenv run python3 photo_editor.py'))
-        self.cpu_freak = tk.Button(self.bottom_frame, text="Launch CPU Freak", width=20, command=lambda: self.open_new_terminal('pipenv run python3 cpu_freak.py'))
-        self.terminal = tk.Button(self.bottom_frame, text="Launch Terminal", width=20, command=lambda: self.open_new_terminal('alacritty'))
-        self.file_manager = tk.Button(self.bottom_frame, text="Launch File Explorer", width=20, command=lambda: self.open_new_terminal('dolphin'))
-        self.video_player = tk.Button(self.bottom_frame, text="Launch Video Player", width=20, command=lambda: self.open_new_terminal('pipenv run python3 video2.py'))
-        self.netsec = tk.Button(self.bottom_frame, text="Launch NetSec", width=20, command=lambda: self.open_new_terminal('pipenv run python3 netsec_script.py'))
-        self.passsave = tk.Button(self.bottom_frame, text="Launch PassSave", width=20, command=lambda: self.open_new_terminal('pipenv run python3 pass_save.py'))
-        self.portprotect = tk.Button(self.bottom_frame, text="Open Port Protection", width=20, command=lambda: self.open_new_terminal('pipenv run python3 USB_portSec.py'))
+        self.github = tk.Button(self.bottom_frame, text="Launch GitHub Interface", width=20, command=lambda: self.open_new_terminal('DRI_PRIME=1 pipenv run python3 github_button.py'))
+        self.smartcalc = tk.Button(self.bottom_frame, text="Launch Smartcalc", width=20, command=lambda: self.open_new_terminal('DRI_PRIME=1 pipenv run python3 smartcalc.py'))
+        self.chrome = tk.Button(self.bottom_frame, text="Launch Chrome", width=20, command=lambda: self.open_new_terminal('DRI_PRIME=1 google-chrome-beta --enable-logging --vmodule=*gpu*=3'))
+        self.photo_editor = tk.Button(self.bottom_frame, text="Launch Photo Editor", width=20, command=lambda: self.open_new_terminal('DRI_PRIME=1 pipenv run python3 photo_editor.py'))
+        self.cpu_freak = tk.Button(self.bottom_frame, text="Launch CPU Freak", width=20, command=lambda: self.open_new_terminal('DRI_PRIME=1 pipenv run python3 cpu_freak.py'))
+        self.terminal = tk.Button(self.bottom_frame, text="Launch Terminal", width=20, command=lambda: self.open_new_terminal('DRI_PRIME=1 alacritty'))
+        self.file_manager = tk.Button(self.bottom_frame, text="Launch File Explorer", width=20, command=lambda: self.open_new_terminal('DRI_PRIME=1 dolphin'))
+        self.video_player = tk.Button(self.bottom_frame, text="Launch Video Player", width=20, command=lambda: self.open_new_terminal('DRI_PRIME=1 pipenv run python3 video2.py'))
+        self.netsec = tk.Button(self.bottom_frame, text="Launch NetSec", width=20, command=lambda: self.open_new_terminal('DRI_PRIME=1 pipenv run python3 netsec_script.py'))
+        self.passsave = tk.Button(self.bottom_frame, text="Launch PassSave", width=20, command=lambda: self.open_new_terminal('DRI_PRIME=1 pipenv run python3 pass_save.py'))
+        self.portprotect = tk.Button(self.bottom_frame, text="Open Port Protection", width=20, command=lambda: self.open_new_terminal('DRI_PRIME=1 pipenv run python3 USB_portSec.py'))
         self.microsoft_security = tk.Button(self.bottom_frame, text="Microsoft Account Security", width=20, command=self.open_microsoft_account_security)
         self.google_security = tk.Button(self.bottom_frame, text="Google Account Security", width=20, command=self.open_google_account_security)
         self.gen_pw = tk.Button(self.bottom_frame, text="Generate Password", width=20, command=self.generate_password)
-        self.drive_pw = tk.Button(self.bottom_frame, text="Launch Google Drive PW", width=20, command=lambda: self.open_new_terminal('drive-password'))
-        self.sys_key = tk.Button(self.bottom_frame, text="Open System Key Manager", width=20, command=lambda: self.open_new_terminal('seahorse'))
-        self.prog_settings = tk.Button(self.bottom_frame, text="Settings", width=20, command=lambda: self.open_new_terminal('pipenv run python3 prog_settings.py'))
-        self.sec_settings = tk.Button(self.bottom_frame, text="Security Settings", width=20, command=lambda: self.open_new_terminal('pipenv run python3 sec_set.py'))
-        self.sys_sec_settings = tk.Button(self.bottom_frame, text="System Security", width=20, command=lambda: self.open_new_terminal('gnome-control-center privacy'))
+        self.drive_pw = tk.Button(self.bottom_frame, text="Launch Google Drive PW", width=20, command=lambda: self.open_new_terminal('DRI_PRIME=1 drive-password'))
+        self.sys_key = tk.Button(self.bottom_frame, text="Open System Key Manager", width=20, command=lambda: self.open_new_terminal('DRI_PRIME=1 seahorse'))
+        self.prog_settings = tk.Button(self.bottom_frame, text="Settings", width=20, command=lambda: self.open_new_terminal('DRI_PRIME=1 pipenv run python3 prog_settings.py'))
+        self.sec_settings = tk.Button(self.bottom_frame, text="Security Settings", width=20, command=lambda: self.open_new_terminal('DRI_PRIME=1 pipenv run python3 sec_set.py'))
+        self.sys_sec_settings = tk.Button(self.bottom_frame, text="System Security", width=20, command=lambda: self.open_new_terminal('DRI_PRIME=1 gnome-control-center privacy'))
         self.sec_key = tk.Button(self.bottom_frame, text="Security Key Interface", width=20, command=self.open_seckey)
 
 
-        self.github.grid(row=0, column=0, padx=5, pady=5)
-        self.smartcalc.grid(row=0, column=1, padx=5, pady=5)
-        self.chrome.grid(row=0, column=2, padx=5, pady=5)
-        self.photo_editor.grid(row=0, column=3, padx=5, pady=5)
-        self.cpu_freak.grid(row=1, column=0, padx=5, pady=5)
-        self.terminal.grid(row=1, column=1, padx=5, pady=5)
-        self.file_manager.grid(row=1, column=2, padx=5, pady=5)
-        self.video_player.grid(row=1, column=3, padx=5, pady=5)
-        self.netsec.grid(row=2, column=0, padx=5, pady=5)
-        self.passsave.grid(row=2, column=1, padx=5, pady=5)
-        self.portprotect.grid(row=2, column=2, padx=5, pady=5)
-        self.microsoft_security.grid(row=2, column=3, padx=5, pady=5)
-        self.google_security.grid(row=3, column=0, padx=5, pady=5)
-        self.gen_pw.grid(row=3, column=1, padx=5, pady=5)
-        self.drive_pw.grid(row=3, column=2, padx=5, pady=5)
-        self.sys_key.grid(row=3, column=3, padx=5, pady=5)
-        self.prog_settings.grid(row=4, column=0, padx=5, pady=5)
-        self.sec_settings.grid(row=4, column=1, padx=5, pady=5)
-        self.sys_sec_settings.grid(row=4, column=2, padx=5, pady=5)
-        self.sec_key.grid(row=4, column=3, padx=5, pady=5)
+        self.github.grid(row=0, column=0, padx=4, pady=4)
+        self.smartcalc.grid(row=0, column=1, padx=4, pady=4)
+        self.chrome.grid(row=0, column=2, padx=4, pady=4)
+        self.photo_editor.grid(row=0, column=3, padx=4, pady=4)
+        self.microsoft_security.grid(row=0, column=4, padx=4, pady=4)
+        self.cpu_freak.grid(row=1, column=0, padx=4, pady=4)
+        self.terminal.grid(row=1, column=1, padx=4, pady=4)
+        self.file_manager.grid(row=1, column=2, padx=4, pady=4)
+        self.video_player.grid(row=1, column=3, padx=4, pady=4)
+        self.google_security.grid(row=1, column=4, padx=4, pady=4)
+        self.netsec.grid(row=2, column=0, padx=4, pady=4)
+        self.portprotect.grid(row=2, column=1, padx=4, pady=4)
+        self.prog_settings.grid(row=2, column=2, padx=4, pady=4)
+        self.sec_settings.grid(row=2, column=3, padx=4, pady=4)
+        self.sys_sec_settings.grid(row=2, column=4, padx=4, pady=4)
+        self.sec_key.grid(row=3, column=0, padx=4, pady=4)
+        self.drive_pw.grid(row=3, column=1, padx=4, pady=4)
+        self.passsave.grid(row=3, column=2, padx=4, pady=4)
+        self.gen_pw.grid(row=3, column=3, padx=4, pady=4)
+        self.sys_key.grid(row=3, column=4, padx=4, pady=4)
+        
+    def apply_background_color(self, parent, color='lightblue'):
+        for widget in parent.winfo_children():
+            if isinstance(widget, (tk.Frame, tk.Label, tk.Button)):
+                widget.configure(bg=color)
+            self.apply_background_color(widget, color)
 
     def check_and_create_shortcuts_file(self):
         if not os.path.exists(self.shortcut_file):
@@ -180,6 +255,9 @@ class EtcherExplorerAPP(tk.Tk):
         menu.add_command(label="Paste", command=lambda: widget.event_generate("<<Paste>>"))
         menu.add_command(label="Undo", command=lambda: widget.event_generate("<<Undo>>"))
         menu.add_command(label="Redo", command=lambda: widget.event_generate("<<Redo>>"))
+        menu.add_separator()
+        menu.add_command(label="Find in Text", command=self.open_search_window)
+        menu.add_command(label="Replace Text", command=self.open_replace_window)
         menu.add_separator()
         menu.add_command(label="Open in VSCode", command=self.open_in_vscode)
         menu.add_command(label="Open Log Viewer", command=self.launch_log_viewer)
@@ -196,6 +274,7 @@ class EtcherExplorerAPP(tk.Tk):
 
     def create_text_field(self):
         self.text_field = ScrolledText(self.top_center_frame, wrap='word', undo=True)
+        self.text_field.configure(bg='lemonchiffon')
         self.text_field.pack(expand=True, fill='both')
         self.text_field.bind("<<Modified>>", self.on_text_modified)
         self.text_field.bind("<Control-z>", self.undo_text)
@@ -252,6 +331,7 @@ class EtcherExplorerAPP(tk.Tk):
         if dir_path:
             self.populate_tree_view(dir_path)
 
+
     def populate_tree_view(self, path):
         self.tree.delete(*self.tree.get_children())
         node = self.tree.insert("", "end", text=path, open=True)
@@ -280,18 +360,18 @@ class EtcherExplorerAPP(tk.Tk):
                 self.text_field.delete(1.0, tk.END)
                 self.text_field.insert(tk.INSERT, content)
 
-    def create_file_shortcuts(self):
-        shortcuts = {
-            "<Control-z>": lambda e: self.text_field.edit_undo() if self.text_field else None,
-            "<Control-y>": lambda e: self.text_field.edit_redo() if self.text_field else None,
-            "<Control-s>": lambda e: self.save_file(),
-            "<Control-o>": lambda e: self.open_file(),
-           # "<Control-n>": lambda e: self.create_file(),
-            "<Control-c>": lambda e: self.copy_text(),
-            "<Control-v>": lambda e: self.paste_text()
-        }
-        for key, command in shortcuts.items():
-            self.bind_all(key, command)
+#    def create_file_shortcuts(self):
+ #       shortcuts = {
+  #          "<Control-z>": lambda e: self.text_field.edit_undo() if self.text_field else None,
+   #         "<Control-y>": lambda e: self.text_field.edit_redo() if self.text_field else None,
+    #        "<Control-s>": lambda e: self.save_file(),
+     #       "<Control-o>": lambda e: self.open_file(),
+      #     # "<Control-n>": lambda e: self.create_file(),
+       #     "<Control-c>": lambda e: self.copy_text(),
+        #    "<Control-v>": lambda e: self.paste_text()
+        #}
+        #for key, command in shortcuts.items():
+         #   self.bind_all(key, command)
 
     def inspect_system(self):
         return os.getlogin()
@@ -330,8 +410,10 @@ class EtcherExplorerAPP(tk.Tk):
             logging.error(f"Error opening terminal: {e}")
 
     def create_menus(self):
-        file_menu = Menu(self.menu_bar, tearoff=0)
+        self.menu_bar = Menu(self, bg="orange", fg="black", tearoff=0)
+        file_menu = Menu(self.menu_bar, bg='orange', tearoff=0)
       #  file_menu.add_command(label="Create File", command=lambda: self.create_file(0))
+        file_menu.add_command(label="Create File", command=self.create_document)
         file_menu.add_command(label="Open", command=self.open_file)
         file_menu.add_command(label="Save", command=self.save_file)
       # file_menu.add_command(label="Paste Data", command=self.paste_file)
@@ -341,7 +423,7 @@ class EtcherExplorerAPP(tk.Tk):
         file_menu.add_command(label="Open Directory", command=self.open_directory)
         self.menu_bar.add_cascade(label="File", menu=file_menu)
 
-        krypt_lock_menu = Menu(self.menu_bar, tearoff=0)
+        krypt_lock_menu = Menu(self.menu_bar, bg='orange', tearoff=0)
         krypt_lock_menu.add_command(label="Create Key", command=self.create_key)
         krypt_lock_menu.add_command(label="Save Key", command=self.save_key)
         krypt_lock_menu.add_command(label="Load Key", command=self.load_key)
@@ -352,14 +434,14 @@ class EtcherExplorerAPP(tk.Tk):
         krypt_lock_menu.add_command(label="DeKrypt Dir", command=self.dekrypt_directory)
         self.menu_bar.add_cascade(label="KryptLockMenu", menu=krypt_lock_menu)
 
-        ide_menu = Menu(self.menu_bar, tearoff=0)
+        ide_menu = Menu(self.menu_bar, bg='orange', tearoff=0)
         ide_menu.add_command(label="Launch DartPad", command=self.open_dartpad)
         available_ides = self.check_system()
         for ide_name, command in available_ides.items():
             ide_menu.add_command(label=f"Open {ide_name}", command=lambda cmd=command: self.open_ide(cmd))
         self.menu_bar.add_cascade(label="IDE", menu=ide_menu)
 
-        help_menu = Menu(self.menu_bar, tearoff=0)
+        help_menu = Menu(self.menu_bar, bg='orange',tearoff=0)
         help_menu.add_command(label="Etcher Explorer Help/Doc", command=lambda: self.launch_help_window("Etcher Explorer Help/Doc"))
         help_menu.add_command(label="CPU Freak Help/Doc", command=lambda: self.launch_help_window("CPU Freak Help/Doc"))
         help_menu.add_command(label="NetSec Help/Doc", command=lambda: self.launch_help_window("NetSec Help/Doc"))
@@ -377,7 +459,7 @@ class EtcherExplorerAPP(tk.Tk):
         self.menu_bar.add_cascade(label="Help/Doc Menu", menu=help_menu)
 
 
-        compile_menu = Menu(self.menu_bar, tearoff=0)
+        compile_menu = Menu(self.menu_bar, bg='orange', tearoff=0)
         compile_menu.add_command(label="Compile Python Program", command=self.compile_program)
         compile_menu.add_command(label="Compile JavaScript Program", command=self.compile_program)
         compile_menu.add_command(label="Compile C++ Program", command=self.compile_program)
@@ -386,10 +468,10 @@ class EtcherExplorerAPP(tk.Tk):
         compile_menu.add_command(label="Compile Java Program", command=self.compile_program)
         compile_menu.add_command(label="Compile Go Program", command=self.compile_program)
         compile_menu.add_command(label="Compile Rust Program", command=self.compile_program)
-        compile_menu.add_command(label="Compile Directory", command=self.compile_directory)
+        compile_menu.add_command(label="Compile Directory", command=self.compile_python_directory)
         self.menu_bar.add_cascade(label="Compile", menu=compile_menu)
 
-        edit_menu = Menu(self.menu_bar, tearoff=0)
+        edit_menu = Menu(self.menu_bar, bg='orange', tearoff=0)
         if hasattr(self, 'text_field') and self.text_field:
             edit_menu.add_command(label="Undo", command=self.text_field.edit_undo, accelerator="Ctrl+Z")
             edit_menu.add_command(label="Redo", command=self.text_field.edit_redo, accelerator="Ctrl+Y")
@@ -401,7 +483,7 @@ class EtcherExplorerAPP(tk.Tk):
         edit_menu.add_command(label="Encode in UTF-8", command=self.encode_utf8)
         self.menu_bar.add_cascade(label="Edit", menu=edit_menu)
 
-        system_menu = Menu(self.menu_bar, tearoff=0)
+        system_menu = Menu(self.menu_bar, bg='orange', tearoff=0)
         system_menu.add_command(label="Log Viewer", command=self.launch_log_viewer)
         system_menu.add_command(label="RAM Statistics", command=self.launch_memory_usage)
        ##ystem_menu.add_command(label="Disk Usage", command=self.launch_disk_usage)
@@ -500,6 +582,249 @@ class EtcherExplorerAPP(tk.Tk):
             "Ctrl+E: Extract Zip"
         ]
         messagebox.showinfo("Keyboard Shortcuts", "\n".join(shortcuts))
+
+    def find_in_text(self, search_for):
+        self.matches = []
+        self.text_field.tag_remove('highlight', '1.0', tk.END)
+        if search_for:
+            start_pos = '1.0'
+            while True:
+                start_pos = self.text_field.search(search_for, start_pos, stopindex=tk.END)
+                if not start_pos:
+                    break
+                end_pos = f"{start_pos}+{len(search_for)}c"
+                self.text_field.tag_add('highlight', start_pos, end_pos)
+                self.matches.append((start_pos, end_pos))
+                start_pos = end_pos
+            self.text_field.tag_config('highlight', background='orange')
+            if self.matches:
+                self.current_match_index = 0
+                self.jump_to_match(0)
+
+    def jump_to_match(self, index):
+        if self.matches:
+            self.text_field.tag_remove('current_match', '1.0', tk.END)
+            start_pos, end_pos = self.matches[index]
+            self.text_field.tag_add('current_match', start_pos, end_pos)
+            self.text_field.tag_config('current_match', background='orangered')
+            self.text_field.see(start_pos)
+            self.text_field.focus_set()  # Refocus on the text field
+            self.update_match_label(index)
+
+    def navigate_matches(self, direction):
+        if self.matches:
+            self.text_field.tag_remove('current_match', '1.0', tk.END)
+            self.current_match_index = (self.current_match_index + direction) % len(self.matches)
+            self.jump_to_match(self.current_match_index)
+
+    def close_search_window(self, search_window):
+        self.text_field.tag_remove('highlight', '1.0', tk.END)
+        self.text_field.tag_remove('current_match', '1.0', tk.END)
+        search_window.destroy()
+
+    def open_colabs(self):
+        try:
+            url = "https://colab.research.google.com/"
+            webbrowser.open(url)
+        except Exception as e:
+            messagebox.showinfo("Error", f"Error opening Colab: {e}")
+            logging.error(f"Error opening Colab: {e}")
+
+
+    def open_search_window(self):
+        search_window = tk.Toplevel(self.master)
+        search_window.title("Search")
+        search_window.geometry("300x300")  # Resize the window to fit all elements
+        search_window.attributes('-topmost', True)  # Keep the search window on top
+        search_window.configure(bg='lightblue')
+
+        search_window.option_add('*Button.Background', 'orange')
+        search_window.option_add('*Button.Foreground', 'black')
+
+
+        search_label = tk.Label(search_window, text="Search For:")
+        search_label.pack(pady=5)
+
+        search_entry = tk.Entry(search_window)
+        search_entry.pack(pady=5)
+
+        def start_search():
+            search_for = search_entry.get()
+            self.find_in_text(search_for)
+            self.update_match_label(self.current_match_index)
+
+        search_button = tk.Button(search_window, text="Search", command=start_search)
+        search_button.pack(pady=5)
+
+        up_button = tk.Button(search_window, text="Up", command=lambda: self.navigate_matches(-1))
+        up_button.pack(pady=5)
+
+        down_button = tk.Button(search_window, text="Down", command=lambda: self.navigate_matches(1))
+        down_button.pack(pady=5)
+
+        self.match_label = tk.Label(search_window, text="Match 0 of 0")
+        self.match_label.pack(pady=5)
+
+        # Bind the native close button to the close_search_window method
+        search_window.protocol("WM_DELETE_WINDOW", lambda: self.close_search_window(search_window))
+
+    def update_match_label(self, index):
+        total_matches = len(self.matches)
+        current_match_number = index + 1 if total_matches > 0 else 0
+        self.match_label.config(text=f"Match {current_match_number} of {total_matches}")
+
+    def open_GPT_assistant(self):
+        try:
+            url = "https://agentgpt.reworkd.ai/"
+            webbrowser.open(url)
+        except Exception as e:
+            messagebox.showinfo("Error", f"Error opening GPT Assistant: {e}")
+            logging.error(f"Error opening GPT Assistant: {e}")
+        def create_document(self):
+            self.text_field.delete(1.0, tk.END)
+            file_path = filedialog.asksaveasfilename(defaultextension=".txt", filetypes=[("All files", "*.*"), ("Text files", "*.txt"), ("Python files", "*.py"), ("HTML files", "*.html"), ("JavaScript files", "*.js"), ("CSS files", "*.css"), ("Markdown files", "*.md")])
+            if file_path:
+                with open(file_path, 'w') as file:
+                    file.write(self.text_field.get(1.0, tk.END))
+    
+    def open_AI_website_geny(self):
+        try:
+            url = "https://10web.io"
+            webbrowser.open(url)
+        except Exception as e:
+            messagebox.showinfo("Error", f"Error opening website genie: {e}")
+            logging.error(f"Error opening website genie: {e}")
+        
+    def create_document(self):
+            self.text_field.delete(1.0, tk.END)
+            file_path = filedialog.asksaveasfilename(defaultextension=".txt", filetypes=[("All files", "*.*"), ("Text files", "*.txt"), ("Python files", "*.py"), ("HTML files", "*.html"), ("JavaScript files", "*.js"), ("CSS files", "*.css"), ("Markdown files", "*.md")])
+            if file_path:
+                with open(file_path, 'w') as file:
+                    file.write(self.text_field.get(1.0, tk.END))
+
+    def open_replace_window(self):
+        replace_window = tk.Toplevel(self.master)
+        replace_window.title("Replace Text")
+        replace_window.geometry("300x200")
+        replace_window.attributes('-topmost', True)
+
+        replace_window.configure(bg='lightgrey')
+
+        find_label = tk.Label(replace_window, text="Find:", bg='lightgrey')
+        find_label.pack(pady=5)
+        find_entry = tk.Entry(replace_window)
+        find_entry.pack(pady=5)
+
+        replace_label = tk.Label(replace_window, text="Replace with:", bg='lightgrey')
+        replace_label.pack(pady=5)
+        replace_entry = tk.Entry(replace_window)
+        replace_entry.pack(pady=5)
+
+        def replace_text():
+            find_text = find_entry.get()
+            replace_text = replace_entry.get()
+            self.replace_in_text(find_text, replace_text)
+
+        replace_button = tk.Button(replace_window, text="Replace", command=replace_text, bg='orange', fg='black')
+        replace_button.pack(pady=5)
+ 
+        replace_window.protocol("WM_DELETE_WINDOW", lambda: self.close_replace_window(replace_window))
+
+    def replace_in_text(self, find_text, replace_text):
+        self.text_field.tag_remove('highlight', '1.0', tk.END)
+        start_pos = '1.0'
+        while True:
+            start_pos = self.text_field.search(find_text, start_pos, stopindex=tk.END)
+            if not start_pos:
+                break
+            end_pos = f"{start_pos}+{len(find_text)}c"
+            self.text_field.delete(start_pos, end_pos)
+            self.text_field.insert(start_pos, replace_text)
+            self.text_field.tag_add('highlight', start_pos, f"{start_pos}+{len(replace_text)}c")
+            start_pos = f"{start_pos}+{len(replace_text)}c"
+        self.text_field.tag_config('highlight', background='yellow')
+
+    def close_replace_window(self, replace_window):
+        self.text_field.tag_remove('highlight', '1.0', tk.END)
+        replace_window.destroy()
+
+
+
+
+
+
+
+
+
+
+
+
+
+    def compile_python_directory(self):
+        def compile_with_nuitka(filepath, output_directory):
+            compile_command = f"nuitka --output-dir={output_directory} --standalone {filepath}"
+            os.system(compile_command)
+
+        def adjust_calls_in_compiled_files(output_directory, compiled_mapping):
+            # This function adjusts the button calls in the compiled files to refer to the correct compiled files
+            for root, _, files in os.walk(output_directory):
+                for filename in files:
+                    if filename.endswith(".bin") or filename.endswith(".exe"):
+                        filepath = os.path.join(root, filename)
+                        with open(filepath, 'rb') as file:
+                            content = file.read()
+                        for original, compiled in compiled_mapping.items():
+                            content = content.replace(f'pipenv run python3 {original}'.encode(),
+                                                    f'pipenv run ./{compiled}'.encode())
+                        with open(filepath, 'wb') as file:
+                            file.write(content)
+
+        root = tk.Tk()
+        root.withdraw()
+
+        # Step 1: Ask for the directory containing .py files
+        input_directory = filedialog.askdirectory(title="Select Directory Containing .py Files")
+        if not input_directory:
+            print("No input directory selected. Exiting...")
+            return
+
+        # Step 2: Ask for the output directory to save compiled files
+        output_directory = filedialog.askdirectory(title="Select Output Directory for Compiled Files")
+        if not output_directory:
+            print("No output directory selected. Exiting...")
+            return
+
+        compiled_files = []
+        compiled_mapping = {}
+
+        # Step 3: Compile each .py file individually using Nuitka
+        for filename in os.listdir(input_directory):
+            if filename.endswith(".py"):
+                filepath = os.path.join(input_directory, filename)
+                compile_with_nuitka(filepath, output_directory)
+                compiled_files.append(filepath)
+                compiled_filename = filename.replace(".py", ".bin")  # Assuming Nuitka generates .bin files
+                compiled_mapping[filename] = compiled_filename
+
+        # Step 4: Combine compiled files into a single directory
+        unified_output_directory = os.path.join(output_directory, "unified_program")
+        os.makedirs(unified_output_directory, exist_ok=True)
+
+        for filename in os.listdir(output_directory):
+            if filename.endswith(".bin") or filename.endswith(".exe"):
+                shutil.move(os.path.join(output_directory, filename), unified_output_directory)
+
+        # Step 5: Adjust the button calls in the compiled files
+        adjust_calls_in_compiled_files(unified_output_directory, compiled_mapping)
+
+        print("Compilation and unification complete! Unified program directory:", unified_output_directory)
+
+
+
+
+    def open_this_code_works(self):
+        url = "https://www.thiscodeworks.com/login"
+        webbrowser.open(url)
 
     def open_microsoft_account_security(self):
         url = "https://account.microsoft.com/security"
@@ -642,7 +967,7 @@ class EtcherExplorerAPP(tk.Tk):
         elif extension == ".rb":
             return "Ruby", ['ruby', '-c']
         elif extension == ".java":
-            return "Java", ['javac']
+           return "Java", ['javac']
         elif extension == ".go":
             return "Go", ['go', 'build']
         elif extension == ".rs":
@@ -700,8 +1025,6 @@ class EtcherExplorerAPP(tk.Tk):
     def open_terminal(self, command):
         subprocess.Popen(['alacritty', '-e', 'bash', '-c', f"{command}; exec bash"])
 
-
-
     def handle_input(self, prompt_dialog, input_var, process_stdin):
         user_input = input_var.get()
         process_stdin.write(user_input + '\n')
@@ -721,11 +1044,12 @@ class EtcherExplorerAPP(tk.Tk):
         except FileNotFoundError:
             messagebox.showinfo("System Monitor is not found", "Please install gnome-system-monitor with terminal command:\nsudo apt-get install gnome-system-manager -y || true")
 
-
     def launch_gpu_monitor(self):
+        self.open_new_terminal('pipenv run python3 gpu_mon.py')
         try:
-            result = subprocess.run(['nvidia-smi'], capture_output=True, text=True)
-            if result.returncode == 0:
+            # Check if NVIDIA GPU is present
+            nvidia_result = subprocess.run(['nvidia-smi'], capture_output=True, text=True)
+            if nvidia_result.returncode == 0:
                 gpu_monitor_window = Toplevel(self)
                 gpu_monitor_window.title("GPU Monitor")
                 gpu_monitor_window.geometry("800x600")
@@ -741,10 +1065,30 @@ class EtcherExplorerAPP(tk.Tk):
 
                 update_gpu_info()
             else:
-                raise FileNotFoundError
+                # Check if AMD GPU is present
+                amd_result = subprocess.run(['aticonfig', '--odgc'], capture_output=True, text=True)
+                if amd_result.returncode == 0:
+                    gpu_monitor_window = Toplevel(self)
+                    gpu_monitor_window.title("GPU Monitor")
+                    gpu_monitor_window.geometry("800x600")
+
+                    text_area = tk.Text(gpu_monitor_window, wrap='word')
+                    text_area.pack(expand=1, fill='both')
+
+                    def update_gpu_info():
+                        result = subprocess.run(['aticonfig', '--odgc'], capture_output=True, text=True)
+                        text_area.delete(1.0, tk.END)
+                        text_area.insert(tk.END, result.stdout)
+                        gpu_monitor_window.after(1000, update_gpu_info)
+
+                    update_gpu_info()
+                else:
+                    raise FileNotFoundError
         except FileNotFoundError:
-            messagebox.showinfo("Error", "Either no Graphics Processing Unit present in system\nor\nnvidia-smi not present in system, try command:\nsudo apt-get install nvidia-driver")
-    
+            messagebox.showinfo("Error", "No compatible GPU found or required tools are not installed.\n"
+                                        "For NVIDIA, try: sudo apt-get install nvidia-driver\n"
+                                        "For AMD, try: sudo apt-get install fglrx")
+
     def launch_log_viewer(self):
         self.current_index = 0
         self.total_matches = 0
@@ -752,6 +1096,7 @@ class EtcherExplorerAPP(tk.Tk):
         self.search_term = ""   
         self.text_area = None
         self.index_label = None
+        self.configure(bg='lightgreen')
         log_viewer = Toplevel(self)
         log_viewer.title("Log Viewer")
         log_viewer.attributes('-fullscreen', True)
@@ -939,6 +1284,10 @@ class EtcherExplorerAPP(tk.Tk):
         memory_window = Toplevel(self)
         memory_window.title("Memory Usage")
         memory_window.geometry("400x300")
+        memory_window.configure(bg='lightblue')
+        memory_window.attributes('-topmost', True)
+        memory_window.option_add('*Button.Background', 'orange')
+        memory_window.option_add('*Button.Foreground', 'black')
         memory_info = psutil.virtual_memory()
         swap_info = psutil.swap_memory()
         total_memory = memory_info.total / (1024 ** 3)
@@ -983,10 +1332,39 @@ class EtcherExplorerAPP(tk.Tk):
         process_window = Toplevel(self)
         process_window.title("Process Viewer")
         process_window.geometry("600x400")
-        self.process_list = Listbox(process_window)
-        self.process_list.pack(fill='both', expand=True)
+        process_window.configure(bg='lightblue')
+        process_window.attributes('-topmost', True)
+        process_window.option_add('*Button.Background', 'orange')
+        process_window.option_add('*Button.Foreground', 'black')
+
+        # Create a scrollbar for the listbox
+        scrollbar = Scrollbar(process_window)
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+
+        self.process_list = Listbox(process_window, yscrollcommand=scrollbar.set)
+        self.process_list.pack(fill=tk.BOTH, expand=True)
+
+        scrollbar.config(command=self.process_list.yview)
+
         self.update_process_list(self.process_list)
         self.process_list.bind("<Button-3>", self.show_process_context_menu)
+
+    def update_process_list(self, listbox):
+        listbox.delete(0, tk.END)
+        for proc in psutil.process_iter(['pid', 'name', 'cpu_percent']):
+            try:
+                listbox.insert(tk.END, f"PID: {proc.info['pid']}, Name: {proc.info['name']}, CPU: {proc.info['cpu_percent']}%")
+            except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
+                pass
+        self.after(5000, self.update_process_list, listbox)
+
+    def show_process_context_menu(self, event):
+        context_menu = Menu(self, tearoff=0)
+        context_menu.add_command(label="Inspect Process", command=self.inspect_process)
+        context_menu.add_command(label="Shutdown Process", command=self.shut_down_process)
+        context_menu.add_command(label="Force Stop Process", command=self.force_stop_process)
+        context_menu.add_command(label="Test Stop Process", command=self.test_stop_process)
+        context_menu.post(event.x_root, event.y_root)
 
     def inspect_process(self):
         selected = self.process_list.curselection()
@@ -996,7 +1374,7 @@ class EtcherExplorerAPP(tk.Tk):
             try:
                 proc = psutil.Process(pid)
                 parent_proc = proc.parent()
-                
+
                 try:
                     process_info = f"PID: {proc.pid}\nName: {proc.name()}\nStatus: {proc.status()}\nCPU: {proc.cpu_percent()}%\nMemory: {proc.memory_info().rss / (1024 * 1024):.2f} MB\n"
                     process_info += f"Disk Read: {proc.io_counters().read_bytes} bytes\nDisk Write: {proc.io_counters().write_bytes} bytes\n"
@@ -1004,7 +1382,7 @@ class EtcherExplorerAPP(tk.Tk):
                 except psutil.AccessDenied:
                     process_info = f"PID: {proc.pid}\nName: {proc.name()}\nStatus: {proc.status()}\nCPU: {proc.cpu_percent()}%\nMemory: {proc.memory_info().rss / (1024 * 1024):.2f} MB\n"
                     process_info += "Disk and network I/O counters are not available (access denied).\n"
-                
+
                 if parent_proc:
                     try:
                         parent_info = f"Parent PID: {parent_proc.pid}\nParent Name: {parent_proc.name()}\nParent Status: {parent_proc.status()}\nParent CPU: {parent_proc.cpu_percent()}%\nParent Memory: {parent_proc.memory_info().rss / (1024 * 1024):.2f} MB\n"
@@ -1015,32 +1393,18 @@ class EtcherExplorerAPP(tk.Tk):
                         parent_info += "Parent disk and network I/O counters are not available (access denied).\n"
                 else:
                     parent_info = "No parent process found."
-                
+
                 info_window = Toplevel(self)
                 info_window.title(f"Process: {proc.name()}")
                 info_window.geometry("600x400")
                 info_label = Label(info_window, text=process_info + "\n" + parent_info, justify='left', wraplength=580)
-                info_label.pack(expand=True, fill='both', padx=10, pady=10)
+                info_label.pack(expand=True, fill=tk.BOTH, padx=10, pady=10)
                 link = f"https://askubuntu.com/search?q={proc.name()}"
                 link_label = Label(info_window, text="More Info on AskUbuntu", fg="blue", cursor="hand2")
                 link_label.pack(pady=10)
                 link_label.bind("<Button-1>", lambda e: webbrowser.open(link))
             except psutil.NoSuchProcess:
                 messagebox.showinfo("Error", f"No such process with PID {pid}.")
-
-    def update_process_list(self, listbox):
-        listbox.delete(0, tk.END)
-        for proc in psutil.process_iter(['pid', 'name', 'cpu_percent']):
-            listbox.insert(tk.END, f"PID: {proc.info['pid']}, Name: {proc.info['name']}, CPU: {proc.info['cpu_percent']}%")
-        self.after(5000, self.update_process_list, listbox)
-
-    def show_process_context_menu(self, event):
-        context_menu = Menu(self, tearoff=0)
-        context_menu.add_command(label="Inspect Process", command=self.inspect_process)
-        context_menu.add_command(label="Shutdown Process", command=self.shut_down_process)
-        context_menu.add_command(label="Force Stop Process", command=self.force_stop_process)
-        context_menu.add_command(label="Test Stop Process", command=self.test_stop_process)
-        context_menu.post(event.x_root, event.y_root)
 
     def shut_down_process(self):
         selected = self.process_list.curselection()
@@ -1076,49 +1440,8 @@ class EtcherExplorerAPP(tk.Tk):
                 proc.resume()
                 messagebox.showinfo("Success", f"Process {pid} can be safely stopped.")
             except Exception as e:
-                messagebox.showerror("Error", f"Stopping process {pid} may break the system: {e}")
-
-    def inspect_process(self):
-        selected = self.process_list.curselection()
-        if selected:
-            pid_str = self.process_list.get(selected[0]).split('PID: ')[1].split(',')[0]
-            pid = int(pid_str.strip())
-            try:
-                proc = psutil.Process(pid)
-                parent_proc = proc.parent()
-                
-                try:
-                    process_info = f"PID: {proc.pid}\nName: {proc.name()}\nStatus: {proc.status()}\nCPU: {proc.cpu_percent()}%\nMemory: {proc.memory_info().rss / (1024 * 1024):.2f} MB\n"
-                    process_info += f"Disk Read: {proc.io_counters().read_bytes} bytes\nDisk Write: {proc.io_counters().write_bytes} bytes\n"
-                    process_info += f"Network Sent: {proc.io_counters().bytes_sent} bytes\nNetwork Received: {proc.io_counters().bytes_recv} bytes\n"
-                except psutil.AccessDenied:
-                    process_info = f"PID: {proc.pid}\nName: {proc.name()}\nStatus: {proc.status()}\nCPU: {proc.cpu_percent()}%\nMemory: {proc.memory_info().rss / (1024 * 1024):.2f} MB\n"
-                    process_info += "Disk and network I/O counters are not available (access denied).\n"
-                
-                if parent_proc:
-                    try:
-                        parent_info = f"Parent PID: {parent_proc.pid}\nParent Name: {parent_proc.name()}\nParent Status: {parent_proc.status()}\nParent CPU: {parent_proc.cpu_percent()}%\nParent Memory: {parent_proc.memory_info().rss / (1024 * 1024):.2f} MB\n"
-                        parent_info += f"Parent Disk Read: {parent_proc.io_counters().read_bytes} bytes\nParent Disk Write: {parent_proc.io_counters().write_bytes} bytes\n"
-                        parent_info += f"Parent Network Sent: {parent_proc.io_counters().bytes_sent} bytes\nParent Network Received: {parent_proc.io_counters().bytes_recv} bytes\n"
-                    except psutil.AccessDenied:
-                        parent_info = f"Parent PID: {parent_proc.pid}\nParent Name: {parent_proc.name()}\nParent Status: {parent_proc.status()}\nParent CPU: {parent_proc.cpu_percent()}%\nParent Memory: {parent_proc.memory_info().rss / (1024 * 1024):.2f} MB\n"
-                        parent_info += "Parent disk and network I/O counters are not available (access denied).\n"
-                else:
-                    parent_info = "No parent process found."
-                
-                info_window = Toplevel(self)
-                info_window.title(f"Process: {proc.name()}")
-                info_window.geometry("600x400")
-                info_label = Label(info_window, text=process_info + "\n" + parent_info, justify='left', wraplength=580)
-                info_label.pack(expand=True, fill='both', padx=10, pady=10)
-                link = f"https://askubuntu.com/search?q={proc.name()}"
-                link_label = Label(info_window, text="More Info on AskUbuntu", fg="blue", cursor="hand2")
-                link_label.pack(pady=10)
-                link_label.bind("<Button-1>", lambda e: webbrowser.open(link))
-            except psutil.NoSuchProcess:
-                messagebox.showinfo("Error", f"No such process with PID {pid}.")
-    
-
+                messagebox.showerror("Error", f"Process {pid} can be safely stopped.")
+            
     def launch_service_manager(self):
         service_window = Toplevel(self)
         service_window.title("Service Manager")
@@ -1422,8 +1745,12 @@ class EtcherExplorerAPP(tk.Tk):
     def launch_firewall_configuration(self):
         firewall_window = Toplevel(self)
         firewall_window.title("Firewall Configuration")
-        firewall_window.geometry("600x400")
-        
+        firewall_window.geometry("460x920")
+        firewall_window.configure(bg='lightblue')
+        firewall_window.attributes('-topmost', True)
+        firewall_window.option_add('*Button.Background', 'orange')
+        firewall_window.option_add('*Button.Foreground', 'black')
+
         rules_frame = Frame(firewall_window)
         rules_frame.pack(fill='both', expand=True, padx=10, pady=10)
         rules_label = Label(rules_frame, text="Firewall Rules")
@@ -1661,42 +1988,11 @@ class EtcherExplorerAPP(tk.Tk):
                 except subprocess.CalledProcessError as e:
                     messagebox.showerror("Error", f"Failed to change group permissions: {e}")
 
-    def launch_backup_restore(self):
-        backup_restore_window = Toplevel(self)
-        backup_restore_window.title("Backup and Restore")
-        backup_restore_window.geometry("600x400")
-        
-        # Backup Options Frame
-        backup_frame = Frame(backup_restore_window)
-        backup_frame.pack(fill='both', expand=True, padx=10, pady=10)
-        
-        backup_label = Label(backup_frame, text="Backup Options")
-        backup_label.pack()
-        
-        iso_button = Button(backup_frame, text="Create ISO Backup", command=self.create_iso_backup)
-        iso_button.pack(fill='x', pady=5)
-        
-        zip_button = Button(backup_frame, text="Create ZIP Backup", command=self.create_zip_backup)
-        zip_button.pack(fill='x', pady=5)
-        
-        tar_button = Button(backup_frame, text="Create TAR Backup", command=self.create_tar_backup)
-        tar_button.pack(fill='x', pady=5)
-        
-        sevenz_button = Button(backup_frame, text="Create 7z Backup", command=self.create_7z_backup)
-        sevenz_button.pack(fill='x', pady=5)
-        
-        custom_button = Button(backup_frame, text="Create Custom Backup", command=self.create_custom_backup)
-        custom_button.pack(fill='x', pady=5)
-        
-        # Restore Options Frame
-        restore_frame = Frame(backup_restore_window)
-        restore_frame.pack(fill='both', expand=True, padx=10, pady=10)
-        
-        restore_label = Label(restore_frame, text="Restore Options")
-        restore_label.pack()
-        
-        restore_button = Button(restore_frame, text="Restore from Backup", command=self.restore_backup)
-        restore_button.pack(fill='x', pady=5)
+
+
+
+
+
 
     def create_iso_backup(self):
         source_dir = filedialog.askdirectory(title="Select Directory to Backup")
@@ -1743,6 +2039,389 @@ class EtcherExplorerAPP(tk.Tk):
                     messagebox.showinfo("Success", "7z backup created successfully!")
                 except Exception as e:
                     messagebox.showerror("Error", f"Failed to create 7z backup: {e}")
+
+    def restore_backup(self):
+        backup_file = filedialog.askopenfilename(title="Select Backup File", filetypes=[("All Files", "*.*")])
+        if backup_file:
+            restore_dir = filedialog.askdirectory(title="Select Directory to Restore To")
+            if restore_dir:
+                try:
+                    if backup_file.endswith('.iso'):
+                        subprocess.check_call(['mount', '-o', 'loop', backup_file, restore_dir])
+                    elif backup_file.endswith('.zip'):
+                        with zipfile.ZipFile(backup_file, 'r') as zip_ref:
+                            zip_ref.extractall(restore_dir)
+                    elif backup_file.endswith('.tar.gz'):
+                        with tarfile.open(backup_file, "r:gz") as tar:
+                            tar.extractall(path=restore_dir)
+                    elif backup_file.endswith('.7z'):
+                        with py7zr.SevenZipFile(backup_file, 'r') as archive:
+                            archive.extractall(path=restore_dir)
+                    elif backup_file.endswith('.custom'):
+                        messagebox.showinfo("Info", "Custom backup format not supported for restoration.")
+                    messagebox.showinfo("Success", "Backup restored.")
+                except Exception as e:
+                    messagebox.showerror("Error", f"Failed to restore backup: {e}")
+
+
+
+
+
+    def launch_backup_restore(self):
+        backup_restore_window = Toplevel(self.master)
+        backup_restore_window.title("Backup and Restore")
+        backup_restore_window.geometry("600x400")
+
+        # Initialize StringVars within this window
+        self.backup_dir = StringVar()
+        self.restore_file = StringVar()
+        self.current_task = StringVar()
+        self.overall_progress = StringVar()
+        self.restore_current_task = StringVar()
+        self.restore_overall_progress = StringVar()
+
+        # Backup Options Frame
+        backup_frame = Frame(backup_restore_window)
+        backup_frame.pack(fill='both', expand=True, padx=10, pady=10)
+
+        backup_label = Label(backup_frame, text="Backup Options")
+        backup_label.pack()
+
+        iso_button = Button(backup_frame, text="Create ISO Backup", command=self.create_iso_backup)
+        iso_button.pack(fill='x', pady=5)
+
+        zip_button = Button(backup_frame, text="Create ZIP Backup", command=self.create_zip_backup)
+        zip_button.pack(fill='x', pady=5)
+
+        tar_button = Button(backup_frame, text="Create TAR Backup", command=self.create_tar_backup)
+        tar_button.pack(fill='x', pady=5)
+
+        sevenz_button = Button(backup_frame, text="Create 7z Backup", command=self.create_7z_backup)
+        sevenz_button.pack(fill='x', pady=5)
+
+        custom_button = Button(backup_frame, text="Create Custom Backup", command=self.custom_backup_window)
+        custom_button.pack(fill='x', pady=5)
+
+        # Restore Options Frame
+        restore_frame = Frame(backup_restore_window)
+        restore_frame.pack(fill='both', expand=True, padx=10, pady=10)
+
+        restore_label = Label(restore_frame, text="Restore Options")
+        restore_label.pack()
+
+        restore_button = Button(restore_frame, text="Restore from Backup", command=self.restore_backup)
+        restore_button.pack(fill='x', pady=5)
+
+        custom_restore = Button(restore_frame, text="Custom Restore", command=self.custom_restore_window)
+        custom_restore.pack(fill='x', pady=5)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    def browse_backup_dir(self):
+        directory = filedialog.askdirectory(title="Select Directory to Backup")
+        self.backup_dir.set(directory)
+
+    def browse_restore_file(self):
+        file = filedialog.askopenfilename(title="Select Backup File")
+        self.restore_file.set(file)
+
+    def create_custom_backup(self):
+        directory = self.backup_dir.get()
+        if not directory:
+            messagebox.showerror("Error", "Please select a directory to backup.")
+            return
+
+        self.current_task.set("Creating 7z archive...")
+        self.overall_progress.set("25%")
+        self.update_idletasks()
+        archive_path = filedialog.asksaveasfilename(defaultextension=".7z", filetypes=[("7z files", "*.7z")])
+        if not archive_path:
+            messagebox.showerror("Error", "No archive name provided.")
+            return
+
+        # Create the 7z archive
+        result = subprocess.run(["7z", "a", archive_path, directory])
+        if result.returncode != 0:
+            messagebox.showerror("Error", "Failed to create 7z archive.")
+            return
+        self.create_backup_security(archive_path)
+
+    def create_backup_security(self, archive_path):
+        self.load_key()
+        self.current_task.set("Encrypting archive...")
+        self.overall_progress.set("50%")
+        self.update_idletasks()
+        self.krypt_data(archive_path)
+        self.failed_backup(archive_path)
+
+    def failed_backup(self, archive_path):
+        #  if not os.path.exists(archive_path):
+#           self.current_task.set("Running self-healing diagnostics...")
+ #          self.overall_progress.set("75%")
+  #         self.update_idletasks()
+   #        self.run_self_healing_diagnostics(archive_path)
+    #   else:
+            self.current_task.set("Backup complete")
+            self.overall_progress.set("100%")
+            self.update_idletasks()
+            messagebox.showinfo("Success", "Custom backup created successfully.")
+
+    def is_encryption_key_loaded(self):
+        return hasattr(self, 'key')
+
+    def run_self_healing_diagnostics(self, file):
+        logging.info(f"Running self-healing diagnostics on {file}")
+        try:
+            # First diagnostic test: Check if the file is accessible and not corrupted
+            with open(file, 'rb') as f:
+                data = f.read()
+            logging.info(f"File {file} is accessible and readable.")
+        except Exception as e:
+            logging.error(f"Error during initial accessibility check on {file}: {e}")
+            messagebox.showerror("Error", f"Error during initial accessibility check on {file}: {e}")
+
+        try:
+            # Second diagnostic test: Check file integrity using 'md5sum'
+            result = subprocess.run(['md5sum', file], capture_output=True, text=True)
+            if result.returncode == 0:
+                logging.info(f"MD5 checksum for {file}: {result.stdout}")
+            else:
+                logging.warning(f"MD5 checksum failed for {file}: {result.stderr}")
+        except Exception as e:
+            logging.error(f"Error during MD5 checksum on {file}: {e}")
+            messagebox.showerror("Error", f"Error during MD5 checksum on {file}: {e}")
+
+        try:
+            # Third diagnostic test: Check file system consistency using 'fsck'
+            result = subprocess.run(['fsck', '-n', file], capture_output=True, text=True)
+            if result.returncode == 0:
+                logging.info(f"File system consistency check passed for {file}")
+            else:
+                logging.warning(f"File system consistency check failed for {file}: {result.stderr}")
+        except Exception as e:
+            logging.error(f"Error during file system consistency check on {file}: {e}")
+            messagebox.showerror("Error", f"Error during file system consistency check on {file}: {e}")
+
+        try:
+            # Fourth diagnostic test: Check for bad sectors using 'badblocks'
+            result = subprocess.run(['badblocks', '-v', file], capture_output=True, text=True)
+            if result.returncode == 0:
+                logging.info(f"No bad sectors found in {file}")
+            else:
+                logging.warning(f"Bad sectors found in {file}: {result.stderr}")
+        except Exception as e:
+            logging.error(f"Error during bad sectors check on {file}: {e}")
+            messagebox.showerror("Error", f"Error during bad sectors check on {file}: {e}")
+
+        try:
+            # Attempt to repair the file using 'ddrescue'
+            repair_file = file + '.repaired'
+            result = subprocess.run(['ddrescue', '-f', file, repair_file], capture_output=True, text=True)
+            if result.returncode == 0:
+                logging.info(f"File {file} repaired successfully. Repaired file: {repair_file}")
+                messagebox.showinfo("Success", f"File {file} repaired successfully. Repaired file: {repair_file}")
+            else:
+                logging.warning(f"File repair failed for {file}: {result.stderr}")
+                messagebox.showwarning("Warning", f"File repair failed for {file}: {result.stderr}")
+        except Exception as e:
+            logging.error(f"Error during file repair on {file}: {e}")
+            messagebox.showerror("Error", f"Error during file repair on {file}: {e}")
+
+    def verify_data_integrity(self, file):
+        logging.info(f"Verifying data integrity for {file}")
+        try:
+            # Example: Check if the file size matches the expected size
+            expected_size = os.path.getsize(file)
+            with open(file, 'rb') as f:
+                data = f.read()
+            actual_size = len(data)
+            if expected_size == actual_size:
+                logging.info(f"Data integrity verified for {file}")
+                return True
+            else:
+                logging.warning(f"Data integrity check failed for {file}")
+                return False
+        except Exception as e:
+            logging.error(f"Error during data integrity verification for {file}: {e}")
+            messagebox.showerror("Error", f"Error during data integrity verification for {file}: {e}")
+            return False
+
+    def test_backup(self):
+        logging.info("Testing backup process")
+        try:
+            # Example: Create a small test file and back it up
+            test_file = "test_backup_file.txt"
+            with open(test_file, 'w') as f:
+                f.write("This is a test file for backup.")
+            self.create_custom_backup()
+            logging.info("Backup test completed successfully.")
+            os.remove(test_file)
+        except Exception as e:
+            logging.error(f"Error during backup testing: {e}")
+            messagebox.showerror("Error", f"Error during backup testing: {e}")
+
+    def custom_backup_window(self):
+        backup_window = Toplevel(self.master)
+        backup_window.title("Custom Backup")
+        backup_window.attributes('-topmost', True)  # Ensure the window stays on top
+
+        Label(backup_window, text="Directory to backup:").grid(row=0, column=0)
+        Entry(backup_window, textvariable=self.backup_dir).grid(row=0, column=1)
+        Button(backup_window, text="Browse", command=self.browse_backup_dir).grid(row=0, column=2)
+
+        Label(backup_window, text="Current Task:").grid(row=1, column=0)
+        Entry(backup_window, textvariable=self.current_task, state='readonly').grid(row=1, column=1)
+
+        Label(backup_window, text="Overall Progress:").grid(row=2, column=0)
+        Entry(backup_window, textvariable=self.overall_progress, state='readonly').grid(row=2, column=1)
+
+        Button(backup_window, text="Confirm", command=self.create_custom_backup).grid(row=3, column=0)
+        Button(backup_window, text="Test", command=self.test_backup).grid(row=3, column=1)
+        Button(backup_window, text="Cancel", command=backup_window.destroy).grid(row=3, column=2)
+
+
+    def custom_restore_window(self):
+        logging.debug("Opening custom restore window.")
+        self.restore_window = Toplevel(self.master)  # Create the Toplevel window
+        self.restore_window.title("Custom Restore")
+        self.restore_window.attributes('-topmost', True)
+
+        Label(self.restore_window, text="Select Backup:").grid(row=0, column=0)
+        Entry(self.restore_window, textvariable=self.restore_file).grid(row=0, column=1)
+        Button(self.restore_window, text="Browse", command=self.browse_restore_file).grid(row=0, column=2)
+
+        Label(self.restore_window, text="Current Task:").grid(row=1, column=0)
+        Entry(self.restore_window, textvariable=self.restore_current_task, state='readonly').grid(row=1, column=1)
+
+        Label(self.restore_window, text="Overall Progress:").grid(row=2, column=0)
+        Entry(self.restore_window, textvariable=self.restore_overall_progress, state='readonly').grid(row=2, column=1)
+
+        Button(self.restore_window, text="Restore", command=self.custom_restore).grid(row=3, column=0)
+        Button(self.restore_window, text="Test", command=self.test_backup).grid(row=3, column=1)
+        Button(self.restore_window, text="Cancel", command=self.restore_window.destroy).grid(row=3, column=2)
+
+    def custom_restore(self):
+        try:
+            logging.debug("Starting custom restore process.")
+            
+            # Ensure the encryption key is loaded
+            if not self.is_encryption_key_loaded():
+                logging.debug("Encryption key not loaded. Loading key.")
+                self.load_key()
+            logging.debug("Encryption key loaded successfully.")
+
+            self.restore_current_task.set("Decrypting archive...")
+            self.restore_overall_progress.set("25%")
+            self.update_idletasks()
+
+            # Decrypt the data
+            archive_path = self.restore_file.get()
+            logging.debug(f"Decrypting data from archive: {archive_path}")
+            if not self.dekrypt_data(archive_path):
+                logging.error("Decryption failed.")
+                return
+
+            logging.debug("Decryption complete.")
+            self.restore_current_task.set("Decryption complete")
+            self.restore_overall_progress.set("50%")
+            self.update_idletasks()
+
+            # Ask the user to select the directory to extract the backup to
+            extract_dir = filedialog.askdirectory(title="Extract to...")
+            if not extract_dir:
+                logging.error("No directory selected for extraction.")
+                messagebox.showerror("Error", "No directory selected.")
+                return
+
+            logging.debug(f"Directory selected for extraction: {extract_dir}")
+            self.restore_current_task.set("Extracting archive...")
+            self.restore_overall_progress.set("75%")
+            self.update_idletasks()
+
+            # Extract the data
+            decrypted_archive_path = archive_path.replace('.krypt', '')
+            logging.debug(f"Extracting data to directory: {extract_dir}")
+            self.extract_data(decrypted_archive_path, extract_dir)
+
+            logging.debug("Extraction complete.")
+            self.restore_current_task.set("Restore complete")
+            self.restore_overall_progress.set("100%")
+            self.update_idletasks()
+
+            # Show the success message with options to view the restored files or close the window
+            self.show_restore_success_message(extract_dir)
+        except Exception as e:
+            logging.error(f"Error restoring custom backup: {e}")
+            messagebox.showerror("Error", f"Error restoring custom backup: {e}")
+
+    def extract_data(self, archive_path, extract_dir):
+        try:
+            logging.debug(f"Running 7z extraction command for archive: {archive_path} to directory: {extract_dir}")
+            result = subprocess.run(["7z", "x", archive_path, f"-o{extract_dir}"], capture_output=True, text=True)
+            if result.returncode != 0:
+                logging.error(f"Failed to extract archive: {result.stderr}")
+                messagebox.showerror("Error", f"Failed to extract archive: {result.stderr}")
+            else:
+                logging.info(f"Archive extracted successfully to {extract_dir}")
+        except Exception as e:
+            logging.error(f"Error extracting archive: {e}")
+            messagebox.showerror("Error", f"Error extracting archive: {e}")
+
+    def show_restore_success_message(self, extract_dir):
+        logging.debug(f"Showing restore success message for directory: {extract_dir}")
+        success_window = Toplevel(self.restore_window)
+        success_window.title("Restore Complete")
+        Button(success_window, text="Okay", command=lambda: self.close_restore_windows(success_window)).pack(side=tk.LEFT, padx=10, pady=10)
+        Button(success_window, text="View Restored Files", command=lambda: self.view_restored_files(success_window, extract_dir)).pack(side=tk.RIGHT, padx=10, pady=10)
+        Button(success_window, text="View Restored Files", command=lambda: self.view_restored_files(success_window, extract_dir)).pack(side=RIGHT, padx=10, pady=10)
+
+    def close_restore_windows(self, success_window):
+        logging.debug("Closing restore windows.")
+        success_window.destroy()
+        self.restore_window.destroy()
+
+    def view_restored_files(self, success_window, extract_dir):
+        logging.debug(f"Opening file explorer for directory: {extract_dir}")
+        success_window.destroy()
+        self.restore_window.destroy()
+        subprocess.run(['xdg-open', extract_dir])
+
+    def browse_restore_file(self):
+        logging.debug("Browsing for restore file.")
+        file = filedialog.askopenfilename(title="Select Backup File", filetypes=[("7z files", "*.7z"), ("All Files", "*.*")])
+        self.restore_file.set(file)
+
+
+
+
+
+
+    def test_backup(self):
+        logging.info("Testing backup process")
+        try:
+            # Example: Create a small test file and back it up
+            test_file = "test_backup_file.txt"
+            with open(test_file, 'w') as f:
+                f.write("This is a test file for backup.")
+            self.create_custom_backup()
+            logging.info("Backup test completed successfully.")
+            os.remove(test_file)
+        except Exception as e:
+            logging.error(f"Error during backup testing: {e}")
+            messagebox.showerror("Error", f"Error during backup testing: {e}")
 
     def restore_backup(self):
         backup_file = filedialog.askopenfilename(title="Select Backup File", filetypes=[("All Files", "*.*")])
@@ -1867,16 +2546,24 @@ class EtcherExplorerAPP(tk.Tk):
             logging.error("Error decrypting data: ", f"Error-{e}")
             messagebox.showerror("Problem with decryption. Error: ", f"{e}")
 
-    def krypt_data(self):
+    def krypt_data(self, *args):
         try:
-            file_path = filedialog.askopenfilename()
+            if len(args) == 1:
+                file_path = args[0]
+            else:
+                file_path = filedialog.askopenfilename()
+            
             if not file_path:
                 return
+            
             with open(file_path, 'rb') as file:
                 data = file.read()
+            
             encrypted_data = self.encrypt(data)
+            
             with open(file_path + '.krypt', 'wb') as file:
                 file.write(encrypted_data)
+            
             os.remove(file_path)
             messagebox.showinfo("Krypt Data", "Data encrypted successfully.")
             logging.info("Data encrypted successfully.")
@@ -1884,11 +2571,42 @@ class EtcherExplorerAPP(tk.Tk):
             messagebox.showerror("Error", f"An error occurred: {e}")
             logging.error(f"An error occurred during data encryption: {e}")
 
-    def krypt_directory(self):
+    def dekrypt_data(self, *args):
         try:
-            dir_path = filedialog.askdirectory()
+            if len(args) == 1:
+                file_path = args[0]
+            else:
+                file_path = filedialog.askopenfilename(filetypes=[("Encrypted files", "*.krypt")])
+            
+            if not file_path:
+                return
+            
+            with open(file_path, 'rb') as file:
+                encrypted_data = file.read()
+            
+            decrypted_data = self.decrypt(encrypted_data)
+            new_file_path = file_path.replace('.krypt', '')
+            
+            with open(new_file_path, 'wb') as file:
+                file.write(decrypted_data)
+            
+            os.remove(file_path)
+            messagebox.showinfo("DeKrypt Data", "Data decrypted successfully.")
+            logging.info("Data decrypted successfully.")
+        except Exception as e:
+            messagebox.showerror("Error", f"An error occurred: {e}")
+            logging.error(f"An error occurred during data decryption: {e}")
+
+    def krypt_directory(self, *args):
+        try:
+            if len(args) == 1:
+                dir_path = args[0]
+            else:
+                dir_path = filedialog.askdirectory()
+            
             if not dir_path:
                 return
+            
             for root, dirs, files in os.walk(dir_path):
                 for file in files:
                     file_path = os.path.join(root, file)
@@ -1898,17 +2616,23 @@ class EtcherExplorerAPP(tk.Tk):
                     with open(file_path + '.krypt', 'wb') as f:
                         f.write(encrypted_data)
                     os.remove(file_path)
+            
             messagebox.showinfo("Krypt Directory", "Directory encrypted successfully.")
             logging.info("Directory encrypted successfully.")
         except Exception as e:
             messagebox.showerror("Error", f"An error occurred: {e}")
             logging.error(f"An error occurred during directory encryption: {e}")
 
-    def dekrypt_directory(self):
+    def dekrypt_directory(self, *args):
         try:
-            dir_path = filedialog.askdirectory()
+            if len(args) == 1:
+                dir_path = args[0]
+            else:
+                dir_path = filedialog.askdirectory()
+            
             if not dir_path:
                 return
+            
             for root, dirs, files in os.walk(dir_path):
                 for file in files:
                     if file.endswith('.krypt'):
@@ -1920,53 +2644,18 @@ class EtcherExplorerAPP(tk.Tk):
                         with open(new_file_path, 'wb') as f:
                             f.write(decrypted_data)
                         os.remove(file_path)
+            
             messagebox.showinfo("DeKrypt Directory", "Directory decrypted successfully.")
             logging.info("Directory decrypted successfully.")
         except Exception as e:
             messagebox.showerror("Error", f"An error occurred: {e}")
             logging.error(f"An error occurred during directory decryption: {e}")
 
-    def dekrypt_data(self):
-        try:
-            file_path = filedialog.askopenfilename(filetypes=[("Encrypted files", "*.krypt")])
-            if not file_path:
-                return
-            try:
-                with open(file_path, 'rb') as file:
-                    encrypted_data = file.read()
-            except IOError as e:
-                messagebox.showerror("File Error", f"An error occurred while reading the file: {e}")
-                logging.error(f"An error occurred while reading the file: {e}")
-                return
 
-            try:
-                decrypted_data = self.decrypt(encrypted_data)
-            except Exception as e:
-                messagebox.showerror("Decryption Error", f"An error occurred during decryption: {e}")
-                logging.error(f"An error occurred during decryption: {e}")
-                return
 
-            new_file_path = file_path.replace('.krypt', '')
-            try:
-                with open(new_file_path, 'wb') as file:
-                    file.write(decrypted_data)
-            except IOError as e:
-                messagebox.showerror("File Error", f"An error occurred while writing the file: {e}")
-                logging.error(f"An error occurred while writing the file: {e}")
-                return
 
-            try:
-                os.remove(file_path)
-            except OSError as e:
-                messagebox.showerror("File Error", f"An error occurred while deleting the file: {e}")
-                logging.error(f"An error occurred while deleting the file: {e}")
-                return
 
-            messagebox.showinfo("DeKrypt Data", "Data decrypted successfully.")
-            logging.info("Data decrypted successfully.")
-        except Exception as e:
-            messagebox.showerror("Error", f"An unexpected error occurred: {e}")
-            logging.error(f"An unexpected error occurred: {e}")
+
 
     def create_key(self):
         try:
@@ -2151,10 +2840,5 @@ def main():
         raise
 if __name__ == "__main__":
     main()
-
-
-
-
-
 
 
