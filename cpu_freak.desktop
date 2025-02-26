@@ -1,0 +1,7 @@
+[Desktop Entry]
+Name=CPU Freak
+Comment=CPU Core control utility
+Exec=bash -c "cd Etcher_Explorer && pipenv install && pipenv run python3 cpu_freak.py"
+Icon/home/jrrosenbum/Etcher_Explorer/cpu.ico
+Type=Application
+Terminal=True

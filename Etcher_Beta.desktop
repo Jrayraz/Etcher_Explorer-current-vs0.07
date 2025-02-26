@@ -1,0 +1,7 @@
+[Desktop Entry]
+Name=Etcher Explorer Beta
+Comment=Open Etcher Explorer main interface
+Exec=bash -c "cd Etcher_Explorer && pipenv install && pipenv run python3 main2.py"
+Icon=/home/jrrosenbum/Etcher_Explorer/bico.ico
+Type=Application
+Terminal=True

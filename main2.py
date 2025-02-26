@@ -27,7 +27,7 @@ import string
 import json
 import tarfile
 import zipfile
-
+import time
 
 # Set up logging
 logging.basicConfig(filename='etched.log', level=logging.DEBUG, 
@@ -152,6 +152,9 @@ class EtcherExplorerAPP(tk.Tk):
         
         self.pac_man_btn = tk.Button(self.top_right_frame, text="PacMan", width=15, command=lambda: self.open_new_terminal('DRI_PRIME=1 pipenv run python3 pacman.py'))
         self.cor_ext_btn = tk.Button(self.top_right_frame, text="Corruption Termination", width=15, command=lambda: self.open_new_terminal('DRI_PRIME=1 pipenv run python3 corruption_exterm.py'))
+        self.colab_btn = tk.Button(self.top_right_frame, text="Colab", width=15, command=self.open_colabs)
+        self.etcher_assist_btn = tk.Button(self.top_right_frame, text="EtcherAssistant", width=35, command=lambda:self.open_new_terminal('DRI_PRIME=1 pipenv run python3 etcher_assist.py'))
+        
         self.open_dir_button.grid(row=1, column=0, columnspan=2, padx=5, pady=5)
         
 
@@ -189,6 +192,8 @@ class EtcherExplorerAPP(tk.Tk):
         self.term_con_btn.grid(row=13, column=0, columnspan=2, padx=5, pady=5)
         self.pac_man_btn.grid(row=14, column=0, columnspan=1, padx=5, pady=5)
         self.cor_ext_btn.grid(row=14, column=1, columnspan=1, padx=5, pady=5)
+        self.colab_btn.grid(row=15, column=0, columnspan=1, padx=5, pady=5)
+        self.etcher_assist_btn.grid(row=16, column=0, columnspan=2, padx=5, pady=5)
 
     def create_combined_bottom_buttons(self):
         self.github = tk.Button(self.bottom_frame, text="Launch GitHub Interface", width=20, command=lambda: self.open_new_terminal('DRI_PRIME=1 pipenv run python3 github_button.py'))
@@ -617,6 +622,15 @@ class EtcherExplorerAPP(tk.Tk):
         self.text_field.tag_remove('highlight', '1.0', tk.END)
         self.text_field.tag_remove('current_match', '1.0', tk.END)
         search_window.destroy()
+
+    def open_colabs(self):
+        try:
+            url = "https://colab.research.google.com/"
+            webbrowser.open(url)
+        except Exception as e:
+            messagebox.showinfo("Error", f"Error opening Colab: {e}")
+            logging.error(f"Error opening Colab: {e}")
+
 
     def open_search_window(self):
         search_window = tk.Toplevel(self.master)

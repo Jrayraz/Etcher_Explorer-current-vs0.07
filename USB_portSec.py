@@ -4,13 +4,15 @@ import psutil
 import logging
 import webbrowser
 import tkinter as tk
-from tkinter import filedialog, simpledialog, messagebox
+from tkinter import filedialog, simpledialog, messagebox, Toplevel
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.backends import default_backend
 from cryptography.fernet import Fernet
 import base64
 import signal
+import pexpect
+import threading
 
 # Set up logging
 logging.basicConfig(filename='usb_portsec.log', level=logging.ERROR,
@@ -19,13 +21,69 @@ logging.basicConfig(filename='usb_portsec.log', level=logging.ERROR,
 class USBPortSecurity:
     def __init__(self, root):
         self.key = None
-        self.root = root(tk.Tk)
-        self.root.geometry('350x510')
+        self.password = None
+        self.root = root
+        self.root.geometry('1080x920')
         self.root.configure(bg='lightblue')
         self.root.option_add('*Button.Background', 'orange')
         self.root.option_add('*Button.Foreground', 'black')
         self.root.option_add('*Frame.Background', 'lightblue')
         self.root.option_add('*Frame.Foreground', 'white')
+        self.prompt_for_password()
+
+    def prompt_for_password(self):
+        try:
+            password_window = Toplevel(self.root)  # Use self.root as the parent
+            password_window.title("Password Required")
+            password_window.geometry("300x100")
+            password_window.attributes('-topmost', True)
+            password_window.grab_set()  # Make sure it grabs focus
+
+            tk.Label(password_window, text="Enter your password:").pack(pady=5)
+            password_entry = tk.Entry(password_window, show="*")
+            password_entry.pack(pady=5)
+            
+            def submit_password():
+                self.password = password_entry.get()
+                if self.password:
+                    password_window.destroy()
+
+            tk.Button(password_window, text="Submit", command=submit_password).pack(pady=5)
+        except Exception as e:
+            print(f"Error prompting for password: {e}")
+
+    def run_sudo_command(self, command):
+        try:
+            result = subprocess.run(['sudo', '-S'] + command, input=(self.password + '\n').encode(), check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            return result.stdout.decode(), result.stderr.decode()
+        except subprocess.CalledProcessError as e:
+            logging.error(f"Subprocess error: {e}")
+            messagebox.showerror("Error", f"Command failed: {e}")
+            return None, str(e)
+
+    def create_key(self):
+        threading.Thread(target=self._create_key_thread).start()
+
+    def _create_key_thread(self):
+        password = simpledialog.askstring("Password", "Enter password to create key:", show='*')
+        if not password:
+            messagebox.showerror("Error", "Password is required to create the key.")
+            return
+        try:
+            salt = os.urandom(16)
+            kdf = PBKDF2HMAC(algorithm=hashes.SHA256(), length=32, salt=salt, iterations=100000, backend=default_backend())
+            key = base64.urlsafe_b64encode(kdf.derive(password.encode()))
+            if len(key) != 44:  # Ensure the key is 32 bytes when decoded
+                raise ValueError("Derived key is not 32 bytes")
+            fernet = Fernet(key)
+            encrypted_key = fernet.encrypt(key)
+            file_path = filedialog.asksaveasfilename(title="Save Key File", defaultextension=".key", filetypes=(("Key Files", "*.key"), ("All Files", "*.*")))
+            if file_path:
+                with open(file_path, 'wb') as file:
+                    file.write(salt + encrypted_key)
+                messagebox.showinfo("Success", "Key created and saved successfully!")
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to create key: {e}")
 
     def load_key(self):
         file_path = filedialog.askopenfilename(title="Select Key File", filetypes=(("Key Files", "*.key"), ("All Files", "*.*")))
@@ -40,6 +98,8 @@ class USBPortSecurity:
                     encrypted_key = file.read()
                 kdf = PBKDF2HMAC(algorithm=hashes.SHA256(), length=32, salt=salt, iterations=100000, backend=default_backend())
                 key = base64.urlsafe_b64encode(kdf.derive(password.encode()))
+                if len(key) != 44:  # Ensure the key is 32 bytes when decoded
+                    raise ValueError("Derived key is not 32 bytes")
                 fernet = Fernet(key)
                 self.key = fernet.decrypt(encrypted_key)
                 messagebox.showinfo("Success", "Key loaded successfully!")
@@ -58,8 +118,13 @@ class USBPortSecurity:
             for device in plugged_in_devices:
                 bus = device.split()[1]
                 device_id = device.split()[3][:-1]
-                subprocess.run(["sudo", "udevadm", "control", "--stop-exec-queue"], check=True)
-                subprocess.run(["sudo", "udevadm", "trigger", f"--subsystem-match=usb --action=remove"], check=True)
+                self.run_sudo_command(["udevadm", "control", "--stop-exec-queue"])
+                self.run_sudo_command(["udevadm", "trigger", "--subsystem-match=usb", "--action=remove"])
+
+            # Encrypt and save the state
+            encrypted_state = Fernet(self.key).encrypt(b"locked")
+            with open("usb_state.enc", "wb") as state_file:
+                state_file.write(encrypted_state)
 
             messagebox.showinfo("Success", "All USB ports have been locked successfully.")
         except Exception as e:
@@ -72,8 +137,15 @@ class USBPortSecurity:
             return
 
         try:
-            subprocess.run(["sudo", "udevadm", "control", "--start-exec-queue"], check=True)
-            subprocess.run(["sudo", "udevadm", "trigger", "--subsystem-match=usb"], check=True)
+            # Decrypt and verify the state
+            with open("usb_state.enc", "rb") as state_file:
+                encrypted_state = state_file.read()
+            state = Fernet(self.key).decrypt(encrypted_state).decode()
+            if state != "locked":
+                raise ValueError("Invalid state or key")
+
+            self.run_sudo_command(["udevadm", "control", "--start-exec-queue"])
+            self.run_sudo_command(["udevadm", "trigger", "--subsystem-match=usb"])
 
             messagebox.showinfo("Success", "All USB ports have been unlocked successfully.")
         except Exception as e:
@@ -84,8 +156,8 @@ class USBPortSecurity:
         try:
             selected_ports = self.get_selected_ports()
             for port in selected_ports:
-                subprocess.run(["sudo", "udevadm", "control", "--stop-exec-queue"], check=True)
-                subprocess.run(["sudo", "udevadm", "trigger", "--subsystem-match=usb", "--action=remove"], check=True)
+                self.run_sudo_command(["udevadm", "control", "--stop-exec-queue"])
+                self.run_sudo_command(["udevadm", "trigger", "--subsystem-match=usb", "--action=remove"])
             logging.info("Selected USB ports locked successfully.")
             messagebox.showinfo("Success", "Selected USB ports have been locked successfully.")
         except Exception as e:
@@ -96,8 +168,8 @@ class USBPortSecurity:
         try:
             selected_ports = self.get_selected_ports()
             for port in selected_ports:
-                subprocess.run(["sudo", "udevadm", "control", "--start-exec-queue"], check=True)
-                subprocess.run(["sudo", "udevadm", "trigger", "--subsystem-match=usb"], check=True)
+                self.run_sudo_command(["udevadm", "control", "--start-exec-queue"])
+                self.run_sudo_command(["udevadm", "trigger", "--subsystem-match=usb"])
             logging.info("Selected USB ports unlocked successfully.")
             messagebox.showinfo("Success", "Selected USB ports have been unlocked successfully.")
         except Exception as e:
@@ -106,8 +178,8 @@ class USBPortSecurity:
 
     def reset_ports(self):
         try:
-            subprocess.run(["sudo", "udevadm", "control", "--reload-rules"], check=True)
-            subprocess.run(["sudo", "udevadm", "trigger"], check=True)
+            self.run_sudo_command(["udevadm", "control", "--reload-rules"])
+            self.run_sudo_command(["udevadm", "trigger"])
             logging.info("USB ports reset to factory settings successfully.")
             messagebox.showinfo("Success", "USB ports have been reset to factory settings successfully.")
         except Exception as e:
@@ -179,44 +251,29 @@ class USBPortSecurity:
 
     def lock_selected_port(self, port):
         try:
-           device_id = port.split()[5]
+            device_id = port.split()[5]
 
-           # Confirm the port exists before attempting to block
-           plugged_in_devices = subprocess.check_output("lsusb").decode().splitlines()
-           if device_id not in [device.split()[5] for device in plugged_in_devices]:
-               raise ValueError(f"USB Port {port} does not exist or is not currently plugged in.")
-           
-           subprocess.run(["sudo", "udevadm", "control", "--stop-exec-queue"], check=True)
-           subprocess.run(["sudo", "udevadm", "trigger", f"subsystem-match=usb --action=remove"], check=True)
+            # Confirm the port exists before attempting to block
+            plugged_in_devices = subprocess.check_output("lsusb").decode().splitlines()
+            if device_id not in [device.split()[5] for device in plugged_in_devices]:
+                raise ValueError(f"USB Port {port} does not exist or is not currently plugged in.")
+            
+            self.run_sudo_command(["udevadm", "control", "--stop-exec-queue"])
+            self.run_sudo_command(["udevadm", "trigger", "--subsystem-match=usb", "--action=remove"])
 
-           logging.info(f"USB port {port} locked successfully.")
-           messagebox.showinfo("Success", f"USB port {port} locked successfully.")
+            # Encrypt and save the state
+            encrypted_state = Fernet(self.key).encrypt(b"locked")
+            with open(f"usb_state_{device_id}.enc", "wb") as state_file:
+                state_file.write(encrypted_state)
+
+            logging.info(f"USB port {port} locked successfully.")
+            messagebox.showinfo("Success", f"USB port {port} locked successfully.")
         except subprocess.CalledProcessError as e:
             logging.error(f"Subprocess error locking USB port {port}", exc_info=True)
             messagebox.showerror("Error", f"Failed to lock USB port {port}: {e}")
         except Exception as e:
             logging.error(f"Error locking USB port {port}", exc_info=True)
             messagebox.showerror("Error", f"Failed to lock USB port {port}: {e}")
-
-           
-           #vs0.01 
-           # Confirm the port exists before attempting to lock
-#       try:
-#            plugged_in_devices = subprocess.check_output("lsusb").decode().splitlines()
- #           if port not in [device.split()[5] for device in plugged_in_devices]:
-  #              raise ValueError(f"USB port {port} does not exist or is not currently plugged in.")
-#
-   #         subprocess.run(["sudo", "udevadm", "control", "--stop-exec-queue"], check=True)
-    #        subprocess.run(["sudo", "udevadm", "trigger", f"--subsystem-match=usb --action=remove"], check=True)
-     #       
-      #      logging.info(f"USB port {port} locked successfully.")
- #           messagebox.showinfo("Success", f"USB port {port} has been locked successfully.")
-  #      except subprocess.CalledProcessError as e:
-   #         logging.error(f"Subprocess error locking USB port {port}", exc_info=True)
-    #        messagebox.showerror("Error", f"Failed to lock USB port {port}: {e}")
-     #   except Exception as e:
-      #      logging.error(f"Error locking USB port {port}", exc_info=True)
-       #     messagebox.showerror("Error", f"Failed to lock USB port {port}: {e}")
 
     def unlock_selected_port(self, port):
         try:
@@ -228,9 +285,16 @@ class USBPortSecurity:
             if device_id not in [device.split()[5] for device in plugged_in_devices]:
                 raise ValueError(f"USB port {port} does not exist or is not currently plugged in.")
 
-            subprocess.run(["sudo", "udevadm", "control", "--start-exec-queue"], check=True)
-            subprocess.run(["sudo", "udevadm", "trigger", f"--subsystem-match=usb"], check=True)
-            
+            # Decrypt and verify the state
+            with open(f"usb_state_{device_id}.enc", "rb") as state_file:
+                encrypted_state = state_file.read()
+            state = Fernet(self.key).decrypt(encrypted_state).decode()
+            if state != "locked":
+                raise ValueError("Invalid state or key")
+
+            self.run_sudo_command(["udevadm", "control", "--start-exec-queue"])
+            self.run_sudo_command(["udevadm", "trigger", "--subsystem-match=usb"])
+
             logging.info(f"USB port {port} unlocked successfully.")
             messagebox.showinfo("Success", f"USB port {port} has been unlocked successfully.")
         except subprocess.CalledProcessError as e:
@@ -251,11 +315,14 @@ class USBPortSecurity:
 root = tk.Tk()
 root.title("USB Port Security")
 
-usb_port_sec = USBPortSecurity()
+usb_port_sec = USBPortSecurity(root)
 
 # Button frame
 button_frame = tk.Frame(root)
 button_frame.pack(side=tk.LEFT, padx=10, pady=10)
+
+button_create_key = tk.Button(button_frame, text="Create Key", command=usb_port_sec.create_key)
+button_create_key.pack(fill=tk.X, pady=5)
 
 button_load_key = tk.Button(button_frame, text="Load Key", command=usb_port_sec.load_key)
 button_load_key.pack(fill=tk.X, pady=5)

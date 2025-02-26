@@ -1,0 +1,18 @@
+[Desktop Entry]
+Categories=Network;WebBrowser;
+Comment[en_US]="Open Chrome Beta with GPU Acceleration"
+Comment="Open Chrome Beta with GPU Acceleration"
+Exec=bash -c 'sh "/home/jrrosenbum/Development/Scripts/chrome-beta-gpu.sh"'
+GenericName[en_US]=
+GenericName=
+Icon=google-chrome-beta
+MimeType=
+Name[en_US]="Chrome Beta with GPU"
+Name="Chrome Beta with GPU"
+Path=
+StartupNotify=true
+Terminal=false
+TerminalOptions=
+Type=Application
+X-KDE-SubstituteUID=false
+X-KDE-Username=

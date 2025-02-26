@@ -1,0 +1,1 @@
+{"undo": "<Control-z>", "redo": "<Control-y>", "cut": "<Control-x>", "copy": "<Control-c>", "paste": "<Control-v>", "open_file": "<Control-o>", "save_file": "<Control-s>", "new_file": "<KP_0>0", "rename_file": "<Control-r>", "open_in_vscode": "<Control-p>", "compress_file": "<Control-b>", "restore_backup": "<Control-e>"}

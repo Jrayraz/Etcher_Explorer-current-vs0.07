@@ -1,0 +1,7 @@
+[Desktop Entry]
+Name=Etcher Explorer
+Comment=Open Etcher Explorer main interface
+Exec=bash -c "cd Etcher_Explorer && pipenv install && pipenv run python3 main.py"
+Icon=/home/jrrosenbum/Etcher_Explorer/iconOLD.ico
+Type=Application
+Terminal=False
